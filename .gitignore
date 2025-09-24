@@ -1,0 +1,48 @@
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Build outputs
+bin/
+obj/
+
+# Logs
+*.log
+*.tlog
+
+# NuGet
+packages/
+*.nupkg
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# ASP.NET Core
+wwwroot/lib/
+appsettings.Development.json
+secrets.json
+
+# Entity Framework
+Migrations/ # optional, include if you want migration history
+*.mdf
+*.ldf
+*.db
+
+# Node.js (if using front-end packages)
+node_modules/
+
+# Visual Studio Code
+.vscode/
+
+# Rider
+.idea/
+
+# Mac
+.DS_Store
+
+# Temporary files
+*.tmp
+*.temp
