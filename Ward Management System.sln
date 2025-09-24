@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35931.197 d17.13
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ward Management System", "Ward Management System.csproj", "{4D5E32F2-DC91-4BE1-9A6B-C87F010AA221}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4D5E32F2-DC91-4BE1-9A6B-C87F010AA221}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4D5E32F2-DC91-4BE1-9A6B-C87F010AA221}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4D5E32F2-DC91-4BE1-9A6B-C87F010AA221}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4D5E32F2-DC91-4BE1-9A6B-C87F010AA221}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F133E619-10F0-4E92-8E3D-FE5C7F4454EC}
+	EndGlobalSection
+EndGlobal

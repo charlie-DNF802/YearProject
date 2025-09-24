@@ -1,0 +1,144 @@
+﻿html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    font-family: 'Segoe UI', sans-serif;
+    background-image: url('/Images/Background.jpeg');
+    background-color: rgba(245, 248, 255, 0.9);
+    background-size: cover;
+    background-position: center;
+    background-repeat: repeat-y;
+}
+
+main {
+    flex: 1;
+    background-color: rgba(255, 255, 255, 0.6);
+    padding: 3rem;
+}
+/* Footer */
+footer {
+    background-color: #222;
+    color: #fff;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    text-align: center;
+}
+
+.nav-link i {
+    transition: transform 0.3s ease, color 0.3s ease;
+}
+
+.nav-link.active i {
+    color: #0d6efd;
+    transform: scale(1.2);
+}
+
+.patient-dashboard {
+    background-color: rgba(255, 255, 255, 0.7);
+    min-height: 100vh;
+}
+
+.dashboard-card {
+    border-radius: 15px;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    border: 2px solid transparent;
+}
+
+.dashboard-card:hover {
+    transform: scale(1.02);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+}
+
+.dashboard-card .card-title i {
+    font-size: 1.5rem;
+    vertical-align: middle;
+}
+
+.badge {
+    font-size: 0.85rem;
+    padding: 0.5em 0.75em;
+    border-radius: 12px;
+}
+
+/* === Staff Page Enhancements === */
+
+.card h6 {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.card h4 {
+    font-size: 1.5rem;
+    margin: 0;
+    font-weight: bold;
+}
+
+#searchInput {
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.03);
+}
+
+.btn-outline-primary,
+.btn-outline-danger {
+    transition: all 0.2s ease-in-out;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-danger:hover {
+    transform: scale(1.05);
+}
+
+.table td,
+.table th {
+    vertical-align: middle;
+}
+
+@media (max-width: 768px) {
+    .row.mb-4.align-items-center h2 {
+        font-size: 1.5rem;
+    }
+
+    .card h4 {
+        font-size: 1.25rem;
+    }
+
+    #searchInput {
+        font-size: 0.9rem;
+    }
+}
+.border-purple {
+    border: 1px solid rebeccapurple !important;
+}
+
+.text-purple {
+    color: rebeccapurple !important;
+}
+
+.bg-purple {
+    background-color: rebeccapurple !important;
+}
+th a {
+    color: white !important;
+    text-decoration: none;
+}
+    th a:hover {
+        text-decoration: underline;
+        color: #f8f9fa; /* Light shade of white */
+    }
+
+
+
+
+
+
