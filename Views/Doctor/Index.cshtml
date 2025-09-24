@@ -1,0 +1,102 @@
+﻿@{
+	ViewData["Title"] = "Doctor Page";
+	Layout = "~/Views/Shared/_UserLayout.cshtml";
+}
+<div class="user-background">
+    <div class="main-content">
+        <div class="content">
+            <div class="container-fluid patient-dashboard py-5">
+                <!-- Welcome Message -->
+                <div class="row justify-content-center text-center mb-5">
+                    <div class="col-lg-8">
+                        <h3 class="display-4 fw-bold text-dark">Welcome Doctor!</h3>
+                        <p class="lead text-muted">View patient folder, Visit patient, Write patient instructions, Prescribe medication, Instruction patient discharge & Create patient visit schedule.</p>
+                    </div>
+                </div>
+
+                <!-- Dashboard Cards -->
+                <div class="row g-4 px-3 px-md-5">
+                    <div class="row justify-content-center g-4 px-3 px-md-5 mb-3">
+                        <!-- Patient List Card -->
+                        <div class="col-md-6 col-xl-4">
+                            <div class="card h-100 p-3 shadow dashboard-card border-warning-subtle">
+                                <div class="card-body d-flex flex-column justify-content-between">
+                                    <div>
+                                        <h5 class="card-title text-warning">
+                                            <i class="bi bi-people-fill me-2"></i> My Patient List
+                                        </h5>
+                                        <p class="card-text">Access and manage all your patients</p>
+                                    </div>
+                                    <a asp-controller="Doctor" asp-action="PatientList" class="btn btn-warning mt-3 text-dark">View Patients</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Visit Patient -->
+                        <div class="col-md-6 col-xl-4">
+                            <div class="card h-100 p-3 shadow dashboard-card border-secondary-subtle">
+                                <div class="card-body d-flex flex-column justify-content-between">
+                                    <div>
+                                        <h5 class="card-title text-secondary">
+                                            <i class="bi bi-hospital-fill me-2"></i> Visit Patient
+                                        </h5>
+                                        <p class="card-text">Change IV drip, Catheter, dress wounds & write instructional notes</p>
+                                    </div>
+                                    <a asp-controller="Doctor" asp-action="TreatPatients" class="btn btn-secondary mt-3">Treat</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row justify-content-center g-4 px-3 px-md-5">
+                        <!-- Prescribe medication -->
+                        <div class="col-md-6 col-xl-4">
+                            <div class="card h-100 p-3 dashboard-card" style="border: 2px solid #6f42c1;">
+                                <div class="card-body d-flex flex-column justify-content-between">
+                                    <div>
+                                        <h5 class="card-title" style="color: #6f42c1;">
+                                            <i class="bi bi-prescription me-2"></i> Prescribe Medication
+                                        </h5>
+                                        <p class="card-text">Prescribe medication for the selected patient.</p>
+                                    </div>
+                                    <a asp-controller="Doctor" asp-action="PatientPrescription" class="btn mt-3 text-white" style="background-color: #6f42c1;">Prescribe</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- My Current Prescriptions -->
+                        <div class="col-md-6 col-xl-4">
+                            <div class="card h-100 p-3 dashboard-card" style="border: 2px solid #20c997;">
+                                <div class="card-body d-flex flex-column justify-content-between">
+                                    <div>
+                                        <h5 class="card-title" style="color: #20c997;">
+                                            <i class="bi bi-file-medical me-2"></i> My Current Prescriptions
+                                        </h5>
+                                        <p class="card-text">View and manage your active prescriptions for patients.</p>
+                                    </div>
+                                    <a asp-controller="Doctor" asp-action="MyPrescriptions" class="btn mt-3 text-white" style="background-color: #20c997;">View Prescriptions</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- View my appointments -->
+                        <div class="col-md-6 col-xl-4">
+                            <div class="card h-100 p-3 shadow dashboard-card border-success-subtle">
+                                <div class="card-body d-flex flex-column justify-content-between">
+                                    <div>
+                                        <h5 class="card-title text-success">
+                                            <i class="bi bi-box-arrow-right me-2"></i> My Appointments
+                                        </h5>
+                                        <p class="card-text">View my appointments and schedule next visit for the patient.</p>
+                                    </div>
+                                    <a asp-controller="Doctor" asp-action="DoctorAppointments" class="btn btn-success mt-3">View</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

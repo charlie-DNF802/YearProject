@@ -1,0 +1,203 @@
+﻿@model Ward_Management_System.ViewModels.AddStaffViewModel
+
+@{
+    ViewData["Title"] = "Add Staff";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+@if (TempData["ToastMessage"] != null)
+{
+    var toastType = TempData["ToastType"] ?? "success";
+    <div aria-live="polite" aria-atomic="true" class="position-relative">
+        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080;">
+            <div id="toastMessage" class="toast align-items-center text-bg-@toastType border-0 shadow" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        @TempData["ToastMessage"]
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10 col-xl-9">
+            <div class="card shadow-lg border-0 rounded-4 bg-light bg-opacity-75">
+                <div class="card-header bg-white rounded-top-4 py-3">
+                    <h3 class="text-center text-primary mb-0">
+                        <i class="bi bi-person-plus-fill me-2"></i> Add New Staff Member
+                    </h3>
+                </div>
+                <div class="card-body p-5">
+                    <form asp-action="AddStaff" method="post" class="needs-validation" novalidate>
+
+                        @if (!ViewData.ModelState.IsValid)
+                        {
+                            <div class="alert alert-danger">
+                                <ul class="mb-0">
+                                    @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                                    {
+                                        <li>@error.ErrorMessage</li>
+                                    }
+                                </ul>
+                            </div>
+                        }
+
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <label asp-for="Name" class="form-label">
+                                    Full Name
+                                    <i class="bi bi-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="Enter staff member's full name."></i>
+                                </label>
+                                <input asp-for="Name" class="form-control" required pattern="[A-Za-z\s]{2,50}" />
+                                <span asp-validation-for="Name" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <label asp-for="IdNumber" class="form-label">ID Number:</label>
+                                <input asp-for="IdNumber" type="text" class="form-control" id="IdNumber" maxlength="13"
+                                       minlength="13" pattern="^\d{13}$" inputmode="numeric"
+                                       oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
+                                <span asp-validation-for="IdNumber" class="text-danger"></span>
+                            </div>
+
+                        </div>
+                        <div class="mb-4">
+                            <label asp-for="Address" class="form-label">
+                                Address
+                                <i class="bi bi-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="5–100 characters. Letters, numbers, commas and periods allowed."></i>
+                            </label>
+                            <input asp-for="Address" class="form-control" />
+                            <span asp-validation-for="Address" class="text-danger"></span>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <label asp-for="PhoneNumber" class="form-label">
+                                    Phone Number
+                                    <i class="bi bi-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="10-digit phone number."></i>
+                                </label>
+                                <input asp-for="PhoneNumber" type="text" class="form-control" maxlength="10" minlength="10" pattern="^\d{10}$" inputmode="numeric"
+                                       oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
+                                <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+                            </div>
+
+                            <div class="col-md-6 mb-4">
+                                <label asp-for="Age" class="form-label">
+                                    Age
+                                    <i class="bi bi-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="Age must be between 18 and 120."></i>
+                                </label>
+                                <input asp-for="Age" id="Age" class="form-control" type="number" min="18" max="120" readonly />
+                                <span asp-validation-for="Age" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <label asp-for="Gender" class="form-label">Gender</label>
+                                <select asp-for="Gender" class="form-select">
+                                    <option value="">-- Select Gender --</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                                <span asp-validation-for="Gender" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6 mb-4"> <label asp-for="Email" class="form-label"> Email Address 
+                                <i class="bi bi-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="Optional: used for login or notifications."></i> 
+                                </label> <input asp-for="Email" class="form-control" type="email" /> 
+                                <span asp-validation-for="Email" class="text-danger"></span> 
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-4">
+                                <label asp-for="DefaultPassword" class="form-label">Default Password</label>
+                                <input asp-for="DefaultPassword" class="form-control" type="password" minlength="6" />
+                                <span asp-validation-for="DefaultPassword" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6 mb-4">
+                                <label asp-for="Role" class="form-label">Role</label>
+                                <select asp-for="Role" class="form-select">
+                                    <option value="">-- Select Role --</option>
+                                    <option value="WardAdmin">Ward Admin</option>
+                                    <option value="Nurse">Nurse</option>
+                                    <option value="Sister">Sister</option>
+                                    <option value="Doctor">Doctor</option>
+                                </select>
+                                <span asp-validation-for="Role" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-center gap-3 mt-4 flex-wrap">
+                            <button type="submit" class="btn btn-primary btn-lg px-4 rounded-pill shadow-sm d-flex align-items-center">
+                                <i class="bi bi-person-plus-fill me-2"></i> Add Staff
+                            </button>
+
+                            <a asp-controller="Admin" asp-action="StaffList" class="btn btn-outline-secondary btn-lg px-4 rounded-pill shadow-sm d-flex align-items-center">
+                                <i class="bi bi-arrow-left-circle me-2"></i> Back to List
+                            </a>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Initialize Bootstrap tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+            new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    </script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var toastEl = document.getElementById("toastMessage");
+            if (toastEl) {
+                var toast = new bootstrap.Toast(toastEl);
+                toast.show();
+            }
+        });
+    </script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var idInput = document.getElementById("IdNumber");
+            var ageInput = document.getElementById("Age");
+
+            idInput.addEventListener("input", function () {
+                var id = idInput.value;
+
+                if (id.length === 13) {
+                    var year = parseInt(id.substring(0, 2), 10);
+                    var month = parseInt(id.substring(2, 4), 10) - 1; // JS months are 0-11
+                    var day = parseInt(id.substring(4, 6), 10);
+
+                    // Determine century (assuming IDs for people born 1900-2099)
+                    var currentYear = new Date().getFullYear() % 100;
+                    var century = (year <= currentYear) ? 2000 : 1900;
+                    year += century;
+
+                    var birthDate = new Date(year, month, day);
+                    var age = new Date().getFullYear() - birthDate.getFullYear();
+                    var m = new Date().getMonth() - birthDate.getMonth();
+
+                    if (m < 0 || (m === 0 && new Date().getDate() < birthDate.getDate())) {
+                        age--;
+                    }
+
+                    ageInput.value = age;
+                } else {
+                    ageInput.value = "";
+                }
+            });
+        });
+    </script>
+}
+
+

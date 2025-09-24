@@ -1,0 +1,333 @@
+﻿@model IEnumerable<Ward_Management_System.Models.Wards>
+
+@{
+    ViewData["Title"] = "Ward List";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+@if (TempData["ToastMessage"] != null)
+{
+    <div aria-live="polite" aria-atomic="true" class="position-relative">
+        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080;">
+            <div id="toastMessage" class="toast align-items-center text-bg-success border-0 shadow" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        @TempData["ToastMessage"]
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="container-fluid patient-dashboard py-5">
+    <!-- Header -->
+    <div class="row mb-4 justify-content-center">
+        <div class="col-md-8 text-center">
+            <h2 class="fw-bold text-dark">Ward Information Overview</h2>
+        </div>
+    </div>
+
+    <!-- Add Ward Button -->
+    <div class="row mb-3">
+        <div class="col-md-12 text-end">
+            <button type="button" class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#addWardModal">
+                <i class="bi bi-plus-circle"></i> Add New Ward
+            </button>
+        </div>
+    </div>
+
+    <!-- Add Modal -->
+    <div class="modal fade" id="addWardModal" tabindex="-1" aria-labelledby="addWardModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow rounded-4 border-0">
+                <form asp-controller="Admin" asp-action="AddWard" method="post">
+                    <!-- Modal Header -->
+                    <div class="modal-header bg-primary text-white rounded-top-4">
+                        <h5 class="modal-title fw-semibold" id="addWardModalLabel">
+                            <i class="bi bi-hospital me-2"></i> Add New Ward
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+
+                    <!-- Modal Body -->
+                    <div class="modal-body p-4">
+                        <div class="mb-3">
+                            <label class="form-label">Ward Name</label>
+                            <input type="text" name="WardName" class="form-control shadow-sm rounded" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">
+                                Total Bed Capacity
+                                <i class="bi bi-info-circle ms-1 text-muted"
+                                   data-bs-toggle="tooltip"
+                                   title="Maximum number of beds this ward can accommodate."></i>
+                            </label>
+                            <input type="number" name="TotalBedCapacty" class="form-control shadow-sm rounded" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">
+                                Current Beds
+                                <i class="bi bi-info-circle ms-1 text-muted"
+                                   data-bs-toggle="tooltip"
+                                   title="Number of beds currently set up and available for use in the ward."></i>
+                            </label>
+                            <input type="number" name="CurrentBedCount" class="form-control shadow-sm rounded" required />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">
+                                Occupied Beds
+                                <i class="bi bi-info-circle ms-1 text-muted"
+                                   data-bs-toggle="tooltip"
+                                   title="Beds currently in use by patients."></i>
+                            </label>
+                            <input type="number" name="OccupiedBeds" class="form-control shadow-sm rounded" required />
+                        </div>
+                    </div>
+
+                    <!-- Modal Footer -->
+                    <div class="modal-footer px-4 pb-4">
+                        <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle me-1"></i> Cancel
+                        </button>
+                        <button type="submit" class="btn btn-success rounded-pill shadow-sm">
+                            <i class="bi bi-save me-1"></i> Save Ward
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary bg-opacity-10 border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">Total Wards</h6>
+                    <h3 class="card-title">@Model.Count()</h3>
+                    <i class="bi bi-hospital fs-1 text-primary opacity-25 float-end"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success bg-opacity-10 border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">Total Capacity</h6>
+                    <h3 class="card-title">@Model.Sum(w => w.TotalBedCapacty)</h3>
+                    <i class="bi bi-people fs-1 text-success opacity-25 float-end"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning bg-opacity-10 border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">Occupied Beds</h6>
+                    <h3 class="card-title">@Model.Sum(w => w.OccupiedBeds)</h3>
+                    <i class="bi bi-clipboard-pulse fs-1 text-warning opacity-25 float-end"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info bg-opacity-10 border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-muted">Available Beds</h6>
+                    <h3 class="card-title">@Model.Sum(w => w.AvailableBedCount)</h3>
+                    <i class="bi bi-clipboard-check fs-1 text-info opacity-25 float-end"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bar Chart  -->
+    <div class="row mb-5">
+        <div class="col-lg-8 offset-lg-2">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title text-center fw-bold text-secondary">Ward Occupancy Chart</h5>
+                    <canvas id="wardOccupancyChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cards for each ward -->
+    <div class="row g-4">
+        @foreach (var ward in Model)
+        {
+            <div class="col-md-6 col-lg-4">
+                <div class="card shadow border-0 h-100">
+                    <div class="card-header bg-light">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="card-title text-primary fw-bold mb-0">@ward.WardName</h5>
+                            <span class="badge @(ward.AvailableBedCount == 0 ? "bg-danger" : "bg-success")">
+                                @ward.AvailableBedCount Available
+                            </span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="progress mb-3" style="height: 10px;">
+                            <div class="progress-bar bg-danger"
+                                 style="width: @((ward.OccupiedBeds * 100) / ward.TotalBedCapacty)%"
+                                 role="progressbar"
+                                 aria-valuenow="@ward.OccupiedBeds"
+                                 aria-valuemin="0"
+                                 aria-valuemax="@ward.TotalBedCapacty">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-6">
+                                <small class="text-muted">Total Capacity</small>
+                                <p class="mb-2">@ward.TotalBedCapacty</p>
+                            </div>
+                            <div class="col-6 text-end">
+                                <small class="text-muted">Utilization</small>
+                                <p class="mb-2">@((ward.OccupiedBeds * 100) / ward.TotalBedCapacty)%</p>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-primary w-100 mt-2"
+                                data-bs-toggle="modal"
+                                data-bs-target="#editWardModal-@ward.WardId">
+                            <i class="bi bi-pencil-square me-1"></i> Manage Ward
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- Edit Modal for this ward -->
+            <div class="modal fade" id="editWardModal-@ward.WardId" tabindex="-1" aria-labelledby="editWardModalLabel-@ward.WardId" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content shadow rounded-4 border-0">
+                        <form asp-controller="Admin" asp-action="EditWard" method="post">
+                            <!-- Modal Header -->
+                            <div class="modal-header bg-warning text-dark rounded-top-4">
+                                <h5 class="modal-title fw-semibold" id="editWardModalLabel-@ward.WardId">
+                                    <i class="bi bi-pencil-square me-2"></i>Edit Ward - @ward.WardName
+                                </h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+
+                            <!-- Modal Body -->
+                            <div class="modal-body p-4">
+                                <input type="hidden" name="WardID" value="@ward.WardId" />
+
+                                <div class="mb-3">
+                                    <label class="form-label">Ward Name</label>
+                                    <input type="text" name="WardName" class="form-control shadow-sm rounded" value="@ward.WardName" required />
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        Total Bed Capacity
+                                        <i class="bi bi-info-circle ms-1 text-muted"
+                                           data-bs-toggle="tooltip"
+                                           title="Maximum number of beds this ward can accommodate."></i>
+                                    </label>
+                                    <input type="number" name="TotalBedCapacty" class="form-control shadow-sm rounded" value="@ward.TotalBedCapacty" required />
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        Current Beds
+                                        <i class="bi bi-info-circle ms-1 text-muted"
+                                           data-bs-toggle="tooltip"
+                                           title="Number of beds currently set up and available for use in the ward."></i>
+                                    </label>
+                                    <input type="number" name="CurrentBedCount" class="form-control shadow-sm rounded" value="@ward.CurrentBedCount" required />
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        Occupied Beds
+                                        <i class="bi bi-info-circle ms-1 text-muted"
+                                           data-bs-toggle="tooltip"
+                                           title="Beds currently in use by patients."></i>
+                                    </label>
+                                    <input type="number" name="OccupiedBeds" class="form-control shadow-sm rounded" value="@ward.OccupiedBeds" required />
+                                </div>
+                            </div>
+
+                            <!-- Modal Footer -->
+                            <div class="modal-footer px-4 pb-4">
+                                <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">
+                                    <i class="bi bi-x-circle me-1"></i> Cancel
+                                </button>
+                                <button type="submit" class="btn btn-warning rounded-pill shadow-sm text-dark">
+                                    <i class="bi bi-save2 me-1"></i> Update Ward
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Back Button -->
+    <div class="mt-5">
+        <a asp-controller="Admin" asp-action="Admin" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left-circle"></i> Back
+        </a>
+    </div>
+</div>
+@section Scripts {
+    <script>
+        const wardNames = @Html.Raw(Json.Serialize(Model.Select(w => w.WardName)));
+        const occupiedBeds = @Html.Raw(Json.Serialize(Model.Select(w => w.OccupiedBeds)));
+        const totalBeds = @Html.Raw(Json.Serialize(Model.Select(w => w.TotalBedCapacty)));
+        const availableBeds = @Html.Raw(Json.Serialize(Model.Select(w => w.AvailableBedCount)));
+
+        const ctx = document.getElementById('wardOccupancyChart').getContext('2d');
+        const wardChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: wardNames,
+                datasets: [
+                    {
+                        label: 'Occupied Beds',
+                        data: occupiedBeds,
+                        backgroundColor: 'rgba(255, 99, 132, 0.7)'
+                    },
+                    {
+                        label: 'Available Beds',
+                        data: availableBeds,
+                        backgroundColor: 'rgba(255, 159, 64, 0.7)'
+                    },
+                    {
+                        label: 'Total Capacity',
+                        data: totalBeds,
+                        backgroundColor: 'rgba(54, 162, 235, 0.4)'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'top' },
+                    title: {
+                        display: true,
+                        text: 'Ward Bed Occupancy Overview'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+
+        // Enable Bootstrap tooltips globally
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    </script>
+}
+
+
+
+
+

@@ -1,0 +1,153 @@
+﻿@model Ward_Management_System.Models.Treatment
+@{
+    ViewData["Title"] = "Treat Patients";
+    Layout = "~/Views/Shared/_UserLayout.cshtml";
+}
+@if (TempData["ToastMessage"] != null)
+{
+    var toastType = TempData["ToastType"] ?? "success";
+    <div aria-live="polite" aria-atomic="true" class="position-relative">
+        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080;">
+            <div id="toastMessage" class="toast align-items-center text-bg-@toastType border-0 shadow" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        @TempData["ToastMessage"]
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@* Hospital-Styled Patient Treatment Form *@
+<div class="container-fluid patient-dashboard py-5">
+    <div class="row justify-content-center mb-4">
+        <div class="col-md-10 text-center">
+            <h2 class="fw-bold text-primary">Patient Treatment</h2>
+            <p>Search for a patient and record their treatment procedure and clinical notes.</p>
+        </div>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-10 col-lg-8">
+            <div class="card dashboard-card shadow-sm bg-white">
+                <div class="card-header bg-purple text-white py-3 rounded-top">
+                    <h3 class="text-center mb-0">
+                        <i class="fas fa-procedures me-2"></i>Patient Treatment Record
+                    </h3>
+                </div>
+
+                <div class="card-body p-4">
+                    @if (TempData["Success"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show">
+                            <i class="fas fa-check-circle me-2"></i>@TempData["Success"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+
+                    <form asp-action="TreatPatients" method="post">
+                        <div class="mb-4">
+                            <label class="form-label text-purple fw-semibold">
+                                <i class="fas fa-user-injured me-2"></i>Patient Selection
+                            </label>
+                            <select id="patientSelect" name="AppointmentId" class="form-select border-purple">
+                                <option value="" selected disabled>Search for patient...</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="Procedure" class="form-label text-purple fw-semibold">
+                                <i class="fas fa-syringe me-2"></i>Medical Procedure
+                            </label>
+                            <select asp-for="Procedure" class="form-select border-purple" id="procedureSelect">
+                                <option value="" selected disabled>-- Select Treatment Procedure --</option>
+                                <option>Change IV drip</option>
+                                <option>Insert Catheter</option>
+                                <option>Dress Wound</option>
+                                <option value="Other">Other</option>
+                            </select>
+                            <!-- shown only if "Other" is chosen -->
+                            <input type="text" name="OtherProcedure" id="otherProcedureInput" class="form-control mt-2" placeholder="Specify the procedure" style="display:none;" />
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="Notes" class="form-label text-purple fw-semibold">
+                                <i class="fas fa-file-medical me-2"></i>Clinical Notes
+                            </label>
+                            <textarea asp-for="Notes" class="form-control border-purple" rows="4"
+                                      placeholder="Enter detailed treatment notes..."></textarea>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4 pt-3 border-top">
+                            <a asp-action="Index" asp-controller="Nurse" class="btn btn-outline-primary px-4">
+                                <i class="fas fa-chevron-left me-2"></i>Return to Dashboard
+                            </a>
+                            <button type="submit" class="btn bg-purple text-white px-4">
+                                <i class="fas fa-save me-2"></i>Record Treatment
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var toastEl = document.getElementById("toastMessage");
+            if (toastEl) {
+                var toast = new bootstrap.Toast(toastEl);
+                toast.show();
+            }
+        });
+         // Initialize Bootstrap tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+            new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+
+        document.getElementById('procedureSelect').addEventListener('change', function () {
+            const otherInput = document.getElementById('otherProcedureInput');
+            if (this.value === 'Other') {
+                otherInput.style.display = 'block';
+            } else {
+                otherInput.style.display = 'none';
+                otherInput.value = ''; // Clear when hidden
+            }
+        });
+
+         $(document).ready(function () {
+            $('#patientSelect').select2({
+                placeholder: "-- Search for a patient --",
+                minimumInputLength: 2,
+                ajax: {
+                    url: '@Url.Action("SearchPatients", "Nurse")',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) {
+                        return {
+                            term: params.term // search term
+                        };
+                    },
+                    processResults: function (data) {
+                        return {
+                            results: data
+                        };
+                    },
+                    cache: true
+                }
+            });
+        });
+    </script>
+
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+}
+

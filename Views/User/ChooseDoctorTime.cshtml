@@ -1,0 +1,137 @@
+﻿@model Ward_Management_System.ViewModels.DoctorTimeSelectionVM
+@{
+    ViewData["Title"] = "Choose Appointment Slot";
+    Layout = "~/Views/Shared/_UserLayout.cshtml";
+}
+
+<div class="container-fluid patient-dashboard py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-10 col-lg-8">
+            <div class="text-center mb-4">
+                <h2 class="fw-bold text-dark">Appointment Booking</h2>
+                <p class="text-muted">Please choose your doctor and time slot to begin the booking process.</p>
+            </div>
+            <div class="card shadow-lg border-primary-subtle">
+                <div class="card-body">
+                    <h2 class="text-center fw-bold mb-4 text-primary">Select Doctor & Time Slot</h2>
+
+                    <form asp-action="ChooseDoctorTime" method="post">
+                        <div class="mb-3">
+                            <label class="form-label text-purple fw-semibold">Doctor</label>
+                            <select asp-for="DoctorId" id="DoctorId" class="form-select border-purple">
+                                <option value="">--Select Doctor--</option>
+                                @foreach (var d in (List<Users>)ViewBag.Doctors)
+                                {
+                                    <option value="@d.Id">@d.FullName</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label text-purple fw-semibold">Preferred Date</label>
+                            <input asp-for="PreferredDate"
+                                   id="PreferredDate"
+                                   type="date"
+                                   class="form-control border-purple"
+                                   value="@DateTime.Today.ToString("yyyy-MM-dd")"
+                                   min="@DateTime.Today.ToString("yyyy-MM-dd")"   />
+                        </div>
+
+                        <div id="timeSlotsArea" class="mb-4" style="display:none;">
+                            <label class="form-label text-purple fw-semibold d-block">Available Time Slots</label>
+                            <div id="timeSlots" class="d-flex flex-wrap gap-2"></div>
+                            <input asp-for="PreferredTime" id="PreferredTime" type="hidden" />
+                            <span class="text-danger" asp-validation-for="PreferredTime"></span>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a asp-action="Index" asp-controller="User" class="btn btn-outline-secondary px-4">
+                                <i class="bi bi-arrow-left me-2"></i> Back to Dashboard
+                            </a>
+
+                            <button type="submit" class="btn btn-success px-4">
+                                Next <i class="bi bi-arrow-right ms-2"></i>
+                            </button>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        const doctorSelect       = document.getElementById("DoctorId");
+        const dateInput          = document.getElementById("PreferredDate");
+        const slotsContainer     = document.getElementById("timeSlots");
+        const timeSlotsArea      = document.getElementById("timeSlotsArea");
+        const preferredTimeInput = document.getElementById("PreferredTime");
+
+        doctorSelect.addEventListener("change", loadSlots);
+        dateInput.addEventListener("change", loadSlots);
+
+                async function loadSlots() {
+            const doctorId = doctorSelect.value;
+            const date     = dateInput.value;
+            if (!doctorId || !date) {
+                timeSlotsArea.style.display = "none";
+                return;
+            }
+
+            preferredTimeInput.value = "";
+
+            const response = await fetch(`/User/GetTakenSlots?doctorId=${doctorId}&date=${date}`);
+            const taken = await response.json();
+
+            const slots = [
+                "09:00","09:30","10:00","10:30","11:00",
+                "11:30","12:00","12:30","13:00","13:30",
+                "14:00","14:30","15:00","15:30","16:00",
+				"16:30","17:00","17:30","18:00"
+            ];
+
+            slotsContainer.innerHTML = "";
+            timeSlotsArea.style.display = "block";
+
+            // Get current time
+            const now = new Date();
+            const selectedDate = new Date(date);
+            const isToday = selectedDate.toDateString() === now.toDateString();
+
+            slots.forEach(slot => {
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.classList.add("btn", "btn-sm");
+                btn.textContent = slot;
+
+                // Parse slot into Date for comparison
+                const [hours, minutes] = slot.split(":").map(Number);
+                const slotDate = new Date(selectedDate);
+                slotDate.setHours(hours, minutes, 0, 0);
+
+                // Disable if already taken OR if today & slot is in the past
+                if (taken.includes(slot) || (isToday && slotDate <= now)) {
+                    btn.classList.add("btn-secondary");
+                    btn.disabled = true;
+                } else {
+                    btn.classList.add("btn-outline-primary");
+                    btn.addEventListener("click", () => {
+                        preferredTimeInput.value = slot;
+                        Array.from(slotsContainer.children).forEach(c => c.classList.remove("active"));
+                        btn.classList.add("active");
+                    });
+                }
+                slotsContainer.appendChild(btn);
+            });
+        }
+
+    </script>
+}
+
+
+
+

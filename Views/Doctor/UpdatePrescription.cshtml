@@ -1,0 +1,91 @@
+﻿@using Ward_Management_System.ViewModels
+@model UpdatePrescriptionViewModel
+@{
+    ViewData["Title"] = "Update Prescription";
+    Layout = "~/Views/Shared/_UserLayout.cshtml";
+}
+@if (TempData["ToastMessage"] != null)
+{
+    var toastType = TempData["ToastType"] ?? "success";
+    <div aria-live="polite" aria-atomic="true" class="position-relative">
+        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080;">
+            <div id="toastMessage" class="toast align-items-center text-bg-@toastType border-0 shadow" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        @TempData["ToastMessage"]
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="container-fluid patient-dashboard py-5">
+    <div class="row justify-content-center mb-4">
+        <div class="col-md-10 text-center">
+            <h2 class="fw-bold text-primary">
+                <i class="bi bi-capsule-pill me-2"></i> Update Presciptions
+            </h2>
+            <p class="text-muted">Make changes to prescriptions before they are administered.</p>
+        </div>
+    </div>
+ 
+<div class="row">
+    <div class="col-md-10 offset-md-1">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h2 class="text-primary fw-bold mb-4">
+                        Prescription for @Model.PatientName
+                    </h2>
+                    <form asp-action="UpdatePrescription" method="post">
+                        <input type="hidden" asp-for="PrescriptionId" />
+                        <input type="hidden" asp-for="PatientName" />
+
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Medication</th>
+                                    <th>Dosage</th>
+                                    <th>Frequency</th>
+                                    <th>Duration</th>
+                                    <th>Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (int i = 0; i < Model.Medications.Count; i++)
+                                {
+                                    <tr>
+                                        <input type="hidden" asp-for="Medications[i].PrescribedMedicationId" />
+                                        <input type="hidden" asp-for="Medications[i].MedId" />
+                                        <input type="hidden" asp-for="Medications[i].MedicationName" />
+                                        <td>@Model.Medications[i].MedicationName</td>
+                                        <td><input asp-for="@Model.Medications[i].Dosage" class="form-control" /></td>
+                                        <td><input asp-for="@Model.Medications[i].Frequency" class="form-control" /></td>
+                                        <td><input asp-for="@Model.Medications[i].Duration" class="form-control" /></td>
+                                        <td><input asp-for="@Model.Medications[i].Notes" class="form-control" /></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                        <a asp-action="MyPrescriptions" class="btn btn-secondary">Cancel</a>
+                    </form>
+                </div>
+            </div>
+    </div>
+</div>
+</div>
+@section Scripts{
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+         document.addEventListener("DOMContentLoaded", function () {
+            var toastEl = document.getElementById("toastMessage");
+            if (toastEl) {
+                var toast = new bootstrap.Toast(toastEl);
+                toast.show();
+            }
+        });
+    </script>
+}
+

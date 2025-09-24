@@ -1,0 +1,355 @@
+﻿@model IEnumerable<Ward_Management_System.Models.Appointment>
+@{
+    ViewData["Title"] = "Today's Appointments";
+    Layout = "~/Views/Shared/_UserLayout.cshtml";
+
+    // Ensure the ViewBag contains the necessary data for pagination
+    Pager pager = new Pager();
+    int pageNo = 0;
+    if (ViewBag.Pager != null)
+    {
+        pager = ViewBag.Pager;
+        pageNo = pager.CurrentPage;
+    }
+}
+@if (TempData["ToastMessage"] != null)
+{
+    var toastType = TempData["ToastType"] ?? "success";
+    <div aria-live="polite" aria-atomic="true" class="position-relative">
+        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080;">
+            <div id="toastMessage" class="toast align-items-center text-bg-@toastType border-0 shadow" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        @TempData["ToastMessage"]
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="container-fluid patient-dashboard py-5">
+    <div class="row justify-content-center mb-4">
+        <div class="col-md-10 text-center">
+            <h2 class="fw-bold text-primary">Today's Appointments</h2>
+            <p class="text-muted">Manage check-ins and monitor scheduled visits.</p>
+        </div>
+    </div>
+
+    <!-- Filtering options -->
+    <div class="row justify-content-center mb-4">
+        <!-- Date Filter -->
+        <div class="col-md-2">
+            @{
+                var today = DateTime.Today;
+                var tomorrow = today.AddDays(1);
+                var next7 = today.AddDays(7);
+            }
+            <select class="form-select" id="dateFilter">
+                <option value="">All Dates</option>
+                <option value="@today.ToString("yyyy-MM-dd")">Today (@today.ToString("dd/MM/yyyy"))</option>
+                <option value="@tomorrow.ToString("yyyy-MM-dd")">Tomorrow (@tomorrow.ToString("dd/MM/yyyy"))</option>
+                <option value="@next7.ToString("yyyy-MM-dd")">Next 7 days</option>
+            </select>
+
+        </div>
+
+        <!-- Status Filter -->
+        <div class="col-md-2">
+            <select class="form-select" id="statusFilter">
+                <option value="">All Statuses</option>
+                <option value="Pending">Pending</option>
+                <option value="CheckedIn">CheckedIn</option>
+                <option value="Admitted">Admitted</option>
+            </select>
+        </div>
+
+        <!-- Age Group Filter -->
+        <div class="col-md-2">
+            <select class="form-select" id="ageFilter">
+                <option value="">All Age Groups</option>
+                <option value="young">Under 30</option>
+                <option value="middle">30-50</option>
+                <option value="senior">50+</option>
+            </select>
+        </div>
+
+        <!-- Search Input -->
+        <div class="col-md-4">
+            <div class="input-group">
+                <span class="input-group-text bg-white">
+                    <i class="bi bi-search text-muted"></i>
+                </span>
+                <input type="text" class="form-control" id="patientSearch" placeholder="Search for a patient...">
+                <button class="btn btn-outline-secondary" type="button" id="clearFilters">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-10 offset-md-1">
+            <div class="card shadow-sm">
+                @if (!Model.Any())
+                {
+                    <div class="alert alert-info text-center col-md-8 mx-auto shadow-sm">
+                        No appointments scheduled for today.
+                    </div>
+                 
+                }
+                else
+                {
+                    <div class="card-body">
+                        <table class="table table-hover align-middle" id="patientTable">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Patient</th>
+                                    <th>Age</th>
+                                    <th>Date</th>
+                                    <th>Time</th>
+                                    <th>Reason</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @{
+                                    int count = 1;
+                                }
+                                @foreach (var item in Model)
+                                {
+                                    <tr>
+                                        <td>@count</td>
+                                        <td>@item.FullName</td>
+                                        <td>@item.Age</td>
+                                        <td>@item.PreferredDate.ToString("dd/MM/yyyy")</td>
+                                        <td>@item.PreferredTime.ToString(@"hh\:mm")</td>
+                                        <td>@item.Reason</td>
+                                        <td class="text-center">
+                                            @if (item.Status == "CheckedIn")
+                                            {
+                                                <span class="badge bg-success">CheckedIn</span>
+                                            }
+                                            else if (item.Status == "Admitted")
+                                            {
+                                                <span class="badge bg-primary">Admitted</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">Pending</span>
+                                            }
+                                        </td>
+                                        <td class="text-center">
+                                            @if (item.Status == "CheckedIn")
+                                            {
+                                                <button type="button" class="btn btn-sm btn-outline-primary ms-1" data-bs-toggle="modal" data-bs-target="#admitModal-@item.AppointmentId">
+                                                    <i class="bi bi-hospital me-1"></i>Admit
+                                                </button>
+                                            }
+                                            else if (item.Status == "Admitted")
+                                            {
+                                                <i class="bi bi-hospital-fill text-primary fs-5" title="Already Admitted"></i>
+                                            }
+                                            else
+                                            {
+                                               <button type="button" class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#checkInModal-@item.AppointmentId">
+                                                   <i class="bi bi-check2-circle me-1"></i> Check In
+                                               </button>
+                                            }
+
+                                        </td>
+                                    </tr>
+                                    count++;
+                                    <!-- Admit Modal -->
+                                    <div class="modal fade" id="admitModal-@item.AppointmentId" tabindex="-1" aria-labelledby="admitModalLabel-@item.AppointmentId" aria-hidden="true">
+                                        <div class="modal-dialog modal-lg modal-dialog-centered">
+                                            <div class="modal-content">
+                                                <form asp-action="AdmitPatient" method="post">
+                                                    @Html.AntiForgeryToken()
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title" id="admitModalLabel-@item.AppointmentId">Admit @item.FullName</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body row g-3">
+                                                        <input type="hidden" name="UserId" value="@item.UserId" />
+                                                        <input type="hidden" name="AppointmentId" value="@item.AppointmentId" />
+                                                        <input type="hidden" name="PatientName" value="@item.FullName" />
+
+                                                        <div class="col-md-6">
+                                                            <label for="AdmissionDate" class="form-label">Admission Date</label>
+                                                            <input type="datetime-local" name="AdmissionDate" class="form-control" required value="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" />
+                                                        </div>
+
+                                                        <div class="col-md-6">
+                                                            <label for="WardId" class="form-label">Ward</label>
+                                                            <select name="WardId" class="form-select" required>
+                                                                <option value="">-- Select Ward --</option>
+                                                                @foreach (var ward in (List<SelectListItem>)ViewBag.Wards ?? new List<SelectListItem>())
+                                                                {
+                                                                    <option value="@ward.Value">@ward.Text</option>
+                                                                }
+                                                            </select>
+                                                        </div>
+
+                                                        <div class="col-md-6">
+                                                            <label for="Allergies" class="form-label">Allergies</label>
+                                                            <input type="text" name="Allergies" class="form-control" required />
+                                                        </div>
+
+                                                        <div class="col-md-6">
+                                                            <label for="Condition" class="form-label">Condition</label>
+                                                            <input type="text" name="Condition" class="form-control" required />
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="submit" class="btn btn-primary">Admit</button>
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    //CheckIn Modal
+                                    <div class="modal fade" id="checkInModal-@item.AppointmentId" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <form asp-action="CheckInPatient" method="post">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title">Check In Patient</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <input type="hidden" name="id" value="@item.AppointmentId" />
+
+                                                        <label for="ConsultationRoomId" class="form-label">Select Consultation Room</label>
+                                                        <select name="ConsultationRoomId" class="form-select" required>
+                                                            <option value="">-- Select Room --</option>
+                                                              @foreach (var room in (List<SelectListItem>)ViewBag.ConsultationRooms ?? new List<SelectListItem>())
+                                                                {
+                                                                    <option value="@room.Value">@room.Text</option>
+                                                                }
+
+
+                                                        </select>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="submit" class="btn btn-success">Check In</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </tbody>
+                        </table>
+                        @*  Paging shared partial view *@
+                        <div class="=container">
+                            @if (pager.TotalPages > 0)
+                            {
+                                <ul class="pagination justify-content-end">
+                                    @if (pager.CurrentPage > 1)
+                                    {
+                                        <li class="page-item">
+                                            <a class="page-link" asp-controller="WardAdmin" asp-action="CheckIn" asp-route-pg="1">First</a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" asp-controller="WardAdmin" asp-action="CheckIn" asp-route-pg="@(pager.CurrentPage - 1)">Previous</a>
+                                        </li>
+                                    }
+                                    @for (var pge = pager.StartPage; pge <= pager.EndPage; pge++)
+                                    {
+                                        <li class="page-item @(pge == pager.CurrentPage ? "active" : "")">
+                                            <a class="page-link" asp-controller="WardAdmin" asp-action="CheckIn" asp-route-pg="@pge">@pge</a>
+                                        </li>
+                                    }
+                                    @if (pager.CurrentPage < pager.TotalPages)
+                                    {
+                                        <li class="page-item">
+                                            <a class="page-link" asp-controller="WardAdmin" asp-action="CheckIn" asp-route-pg="@(pager.CurrentPage + 1)">Next</a>
+                                        </li>
+                                        <li>
+                                            <a class="page-link" asp-controller="WardAdmin" asp-action="CheckIn" asp-route-pg="@(pager.TotalPages)">Last</a>
+                                        </li>
+                                    }
+                                </ul>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+        <!-- Back Button -->
+        <div class="text-center mt-4">
+            <a asp-action="Index" asp-controller="WardAdmin" class="btn btn-secondary px-4">
+                <i class="bi bi-arrow-left-circle me-1"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var toastEl = document.getElementById("toastMessage");
+            if (toastEl) {
+                var toast = new bootstrap.Toast(toastEl);
+                toast.show();
+            }
+        });
+
+         // filtering functionality
+          document.addEventListener('DOMContentLoaded', function() {
+            const dateFilter = document.getElementById('dateFilter');
+            const statusFilter = document.getElementById('statusFilter');
+            const ageFilter = document.getElementById('ageFilter');
+            const patientSearch = document.getElementById('patientSearch');
+            const clearFilters = document.getElementById('clearFilters');
+            const rows = document.querySelectorAll("#patientTable tbody tr");
+
+            function applyFilters() {
+                const dateValue = dateFilter.value;
+                const statusValue = statusFilter.value.toLowerCase();
+                const ageValue = ageFilter.value;
+                const searchValue = patientSearch.value.toLowerCase();
+
+                rows.forEach(row => {
+                    const ageText = parseInt(row.querySelector('td:nth-child(3)').textContent);
+                    const dateText = row.querySelector('td:nth-child(4)').textContent.toLowerCase();
+                    const statusText = row.querySelector('td:nth-child(7)').textContent.toLowerCase();
+                    const rowText = row.innerText.toLowerCase();
+
+                    // Matches
+                    let ageMatch = true
+                    if (ageValue === 'young')    ageMatch = ageText < 30;
+                    if (ageValue === 'middle')   ageMatch = ageText >= 30 && ageText <= 50;
+                    if (ageValue === 'senior')   ageMatch = ageText > 50;
+
+                    const dateMatch   = !dateValue || dateText.includes(dateValue);
+                    const statusMatch = !statusValue || statusText.includes(statusValue);
+                    const searchMatch = !searchValue || rowText.includes(searchValue);
+
+                    row.style.display = (dateMatch && statusMatch && ageMatch && searchMatch) ? "" : "none";
+                });
+            }
+
+            [dateFilter, statusFilter, ageFilter, patientSearch].forEach(f => {
+                f.addEventListener('change', applyFilters);
+                f.addEventListener('keyup', applyFilters);
+            });
+
+            clearFilters.addEventListener('click', function() {
+                dateFilter.value = '';
+                statusFilter.value = '';
+                ageFilter.value = '';
+                patientSearch.value = '';
+                applyFilters();
+            });
+        });
+    </script>
+}
+
+

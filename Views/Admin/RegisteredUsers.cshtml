@@ -1,0 +1,314 @@
+﻿@model IEnumerable<Ward_Management_System.ViewModels.StaffListViewModel>
+@using System.Text.Json
+
+@{
+    ViewData["Title"] = "Account Holders List";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+
+    // Ensure the ViewBag contains the necessary data for pagination
+    Pager pager = new Pager();
+    int pageNo = 0;
+    if (ViewBag.Pager != null)
+    {
+        pager = ViewBag.Pager;
+        pageNo = pager.CurrentPage;
+    }
+}
+@if (TempData["ToastMessage"] != null)
+{
+    <div aria-live="polite" aria-atomic="true" class="position-relative">
+        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080;">
+            <div id="toastMessage" class="toast align-items-center text-bg-success border-0 shadow" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        @TempData["ToastMessage"]
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="container-fluid patient-dashboard py-5">
+    <!-- Header Row -->
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-8">
+            <h2 class="fw-bold text-dark">Account Holders Overview</h2>
+        </div>
+    </div>
+
+    <!-- Back Button -->
+    <div class="mt-4">
+        <a asp-controller="Admin" asp-action="Admin" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left-circle"></i> Back
+        </a>
+    </div>
+    <br />
+
+    <!-- Filtering form -->
+    <form method="get" asp-controller="Admin" asp-action="RegisteredUsers" class="d-flex align-items-center mb-4 flex-wrap gap-3 w-100">
+        <!-- Gender Filter -->
+        <select class="form-select" name="gender" style="width: 400px;">
+            <option value="">All Genders</option>
+            <option value="Male" selected="@(ViewBag.CurrentGender == "Male" ? "selected" : null)">Male</option>
+            <option value="Female" selected="@(ViewBag.CurrentGender == "Female" ? "selected" : null)">Female</option>
+            <option value="Other" selected="@(ViewBag.CurrentGender == "Other" ? "selected" : null)">Other</option>
+        </select>
+
+        <!-- Age Group Filter -->
+        <select class="form-select" name="ageGroup" style="width: 400px;">
+            <option value="">All Age Groups</option>
+            <option value="young" selected="@(ViewBag.CurrentAgeGroup == "young" ? "selected" : null)">Under 30</option>
+            <option value="middle" selected="@(ViewBag.CurrentAgeGroup == "middle" ? "selected" : null)">30-50</option>
+            <option value="senior" selected="@(ViewBag.CurrentAgeGroup == "senior" ? "selected" : null)">50+</option>
+        </select>
+
+        <!-- Search Input + Buttons -->
+        <div class="input-group" style="flex: 1; min-width: 300px;">
+            <input type="text" name="search" value="@(ViewBag.CurrentSearch ?? "")" class="form-control" placeholder="Search user..." />
+            <button type="submit" class="btn btn-primary">Filter</button>
+            <a class="btn btn-outline-secondary" asp-controller="Admin" asp-action="RegisteredUsers">Clear</a>
+        </div>
+    </form>
+
+    <!-- Stats & Table -->
+    <div class="row">
+        <!-- Table -->
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <table class="table table-hover align-middle" id="RegisteredUsersTable">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>#</th>
+                                <th>Full Name</th>
+                                <th>Email</th>
+                                <th>Age</th>
+                                <th>Address</th>
+                                <th>Phone Number</th>
+                                <th>ID Number</th>
+                                <th>Gender</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{
+                                int count = 1;
+                            }
+                            @foreach (var staff in Model)
+                            {
+                                <tr>
+                                    <td>@count</td>
+                                    <td>@staff.FullName</td>
+                                    <td>@staff.Email</td>
+                                    <td>@staff.Age</td>
+                                    <td>@staff.Address</td>
+                                    <td>@staff.PhoneNumber</td>
+                                    <td>@staff.IdNumber</td>
+                                    <td>@staff.Gender</td>
+                                </tr>
+                                count++;
+                            }
+                        </tbody>
+                    </table>
+                    @*  Paging shared partial view *@
+                    <div class="=container">
+                        @if (pager.TotalPages > 0)
+                        {
+                            <ul class="pagination justify-content-end">
+                                @if (pager.CurrentPage > 1)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" asp-controller="Admin" asp-action="RegisteredUsers" asp-route-pg="1">First</a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" asp-controller="Admin" asp-action="RegisteredUsers" asp-route-pg="@(pager.CurrentPage - 1)">Previous</a>
+                                    </li>
+                                }
+                                @for (var pge = pager.StartPage; pge <= pager.EndPage; pge++)
+                                {
+                                    <li class="page-item @(pge == pager.CurrentPage ? "active" : "")">
+                                        <a class="page-link" asp-controller="Admin" asp-action="RegisteredUsers" asp-route-pg="@pge">@pge</a>
+                                    </li>
+                                }
+                                @if (pager.CurrentPage < pager.TotalPages)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" asp-controller="Admin" asp-action="RegisteredUsers" asp-route-pg="@(pager.CurrentPage + 1)">Next</a>
+                                    </li>
+                                    <li>
+                                        <a class="page-link" asp-controller="Admin" asp-action="RegisteredUsers" asp-route-pg="@(pager.TotalPages)">Last</a>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Stats Panel -->
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title mb-4">User Statistics</h5>
+
+                    <div class="row mb-3">
+                        <!-- Total Users -->
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center h-100">
+                                <div class="bg-primary bg-opacity-10 p-3 rounded me-3">
+                                    <i class="bi bi-people-fill text-primary fs-4"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">Total Users</h6>
+                                    <p class="fs-3 mb-0">@Model.Count()</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Gender Ratio -->
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center h-100">
+                                <div class="bg-info bg-opacity-10 p-3 rounded me-3">
+                                    <i class="bi bi-gender-male text-info fs-4"></i>
+                                    <i class="bi bi-gender-female text-info fs-4"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">Gender Ratio</h6>
+                                    <p class="mb-0">
+                                        Male: @Model.Count(u => u.Gender == "Male")<br>
+                                        Female: @Model.Count(u => u.Gender == "Female")
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Age Groups -->
+                    <div class="mb-3">
+                        <h6>Age Distribution</h6>
+                        <div class="progress mb-1" style="height: 20px;">
+                            <div class="progress-bar bg-success" role="progressbar"
+                                 style="width: @(Model.Count(u => u.Age < 30) * 100 / Model.Count())%">
+                                18-29
+                            </div>
+                        </div>
+                        <div class="progress mb-1" style="height: 20px;">
+                            <div class="progress-bar bg-warning" role="progressbar"
+                                 style="width: @(Model.Count(u => u.Age >= 30 && u.Age < 50) * 100 / Model.Count())%">
+                                30-49
+                            </div>
+                        </div>
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar bg-danger" role="progressbar"
+                                 style="width: @(Model.Count(u => u.Age >= 50) * 100 / Model.Count())%">
+                                50+
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Activity -->
+                    <div class="mt-4">
+                        <h6>Recent Registrations</h6>
+                        <ul class="list-group list-group-flush">
+                            @foreach (var recentUser in Model.OrderByDescending(u => u.DateAdded).Take(3))
+                            {
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    @recentUser.FullName
+                                    <span class="badge bg-primary rounded-pill">New</span>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+       
+    </div>
+
+</div>
+
+@section Scripts {
+    <script>
+            // Update statistics based on visible rows
+            function updateFilteredStatistics() {
+                const visibleRows = $('#RegisteredUsersTable tbody tr:visible');
+                const totalVisible = visibleRows.length;
+
+                // Update total users count
+                $('.card-title').next().find('p.fs-3').text(totalVisible);
+
+                // Update gender ratio
+                const maleCount = visibleRows.filter(function() {
+                    return $(this).find('td:eq(7)').text() === 'Male';
+                }).length;
+
+                const femaleCount = visibleRows.filter(function() {
+                    return $(this).find('td:eq(7)').text() === 'Female';
+                }).length;
+
+                $('.card-title').next().next().find('p.mb-0').html(`Male: ${maleCount}<br>Female: ${femaleCount}`);
+
+                // Update age distribution
+                if (totalVisible > 0) {
+                    const youngCount = visibleRows.filter(function() {
+                        return parseInt($(this).find('td:eq(3)').text()) < 30;
+                    }).length;
+
+                    const middleCount = visibleRows.filter(function() {
+                        const age = parseInt($(this).find('td:eq(3)').text());
+                        return age >= 30 && age < 50;
+                    }).length;
+
+                    const seniorCount = visibleRows.filter(function() {
+                        return parseInt($(this).find('td:eq(3)').text()) >= 50;
+                    }).length;
+
+                    $('.progress-bar').eq(0).css('width', `${(youngCount / totalVisible) * 100}%`);
+                    $('.progress-bar').eq(1).css('width', `${(middleCount / totalVisible) * 100}%`);
+                    $('.progress-bar').eq(2).css('width', `${(seniorCount / totalVisible) * 100}%`);
+                }
+            }
+
+            //Delete
+            const deleteModal = document.getElementById('deleteModal');
+
+            deleteModal.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+                const userId = button.getAttribute('data-id');
+                const userName = button.getAttribute('data-name');
+                const userEmail = button.getAttribute('data-email');
+                const userRole = button.getAttribute('data-role');
+
+                // Update modal content
+                document.getElementById('modalUserId').value = userId;
+                document.getElementById('modalName').textContent = userName;
+                document.getElementById('modalEmail').textContent = userEmail;
+                document.getElementById('modalRole').textContent = userRole;
+            });
+
+            //Edit
+            const editModal = document.getElementById('editModal');
+
+            editModal.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+
+                document.getElementById('editUserId').value = button.getAttribute('data-id');
+                document.getElementById('editName').value = button.getAttribute('data-name');
+                document.getElementById('editAge').value = button.getAttribute('data-age');
+                document.getElementById('editEmail').value = button.getAttribute('data-email');
+                document.getElementById('editPhone').value = button.getAttribute('data-phone');
+                document.getElementById('editIdNumber').value = button.getAttribute('data-idnumber');
+                document.getElementById('editAddress').value = button.getAttribute('data-address');
+                document.getElementById('editGender').value = button.getAttribute('data-gender');
+
+                // Extract first role only if multiple
+                const role = button.getAttribute('data-role').split(',')[0].trim();
+                document.getElementById('editRole').value = role;
+
+                document.getElementById('editPassword').value = "";
+            });
+        });
+    </script>
+}

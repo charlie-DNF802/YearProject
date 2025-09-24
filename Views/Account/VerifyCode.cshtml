@@ -1,0 +1,26 @@
+﻿@{
+    ViewData["Title"] = "Verify Code";
+    Layout = "~/Views/Shared/_AccountLayout.cshtml";
+}
+<div class="account-container">
+    <div class="account-box">
+        <h2 class="text-center mb-4">Verify Code</h2>
+        <form asp-action="VerifyCode" method="post">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="mb-3">
+                <label for="code" class="form-label">Enter Verification Code:</label>
+                <input type="text" name="code" class="form-control" maxlength="6" required />
+            </div>
+
+            <input type="submit" value="Verify" class="btn btn-primary w-100 p-2" />
+            <a asp-action="VerifyEmail" class="btn btn-secondary w-100 p-2">Cancel</a>
+        </form>
+    </div>
+</div>
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_validationScriptsPartial.cshtml");
+    }
+}

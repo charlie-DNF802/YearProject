@@ -1,0 +1,146 @@
+﻿@model Ward_Management_System.Models.Prescription
+@{
+    ViewData["Title"] = "Administer Medication";
+    Layout = "~/Views/Shared/_UserLayout.cshtml";
+
+    // Ensure the ViewBag contains the necessary data for pagination
+    Pager pager = new Pager();
+    int pageNo = 0;
+    if (ViewBag.Pager != null)
+    {
+        pager = ViewBag.Pager;
+        pageNo = pager.CurrentPage;
+    }
+}
+@if (TempData["ToastMessage"] != null)
+{
+    var toastType = TempData["ToastType"] ?? "success";
+    <div aria-live="polite" aria-atomic="true" class="position-relative">
+        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080;">
+            <div id="toastMessage" class="toast align-items-center text-bg-@toastType border-0 shadow" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        @TempData["ToastMessage"]
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="container-fluid patient-dashboard py-5">
+    <div class="row justify-content-center mb-4 ">
+        <div class="col-md-10 text-center">
+            <h2 class="fw-bold text-primary">Administer a patients medication</h2>
+            <p>View List Of medications and pick the up to administer</p>
+        </div>
+    </div>
+    <div class="row">
+        @* <h2 class="patient-header mb-4">
+            Patient:
+            <span class="patient-name">@Model.Appointment?.FullName</span>
+        </h2> *@
+        <div class="col-md-10 offset-md-1">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <table class="table table-hover table-striped mb-0 align-middle">
+                        <thead class="table-primary">
+                            <tr>
+                                <th>Medication</th>
+                                <th>Schedule</th>
+                                <th>Dosage</th>
+                                <th>Frequency</th>
+                                <th>Duration</th>
+                                <th>Notes</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var med in Model.Medications.Where(m => !m.IsDispensed))
+                            {
+                                bool canDispense = User.IsInRole("Sister") ||
+                                (User.IsInRole("Nurse") && med.StockMedications.Schedule <= 4);
+
+                                <tr>
+                                    <td class="fw-semibold">@med.StockMedications.Name</td>
+                                    <td>
+                                        <span class="badge bg-info text-dark">
+                                            Schedule @med.StockMedications.Schedule
+                                        </span>
+                                    </td>
+                                    <td>@med.Dosage</td>
+                                    <td>@med.Frequency</td>
+                                    <td>@med.Duration</td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(med.Notes))
+                                        {
+                                            <div class="p-2 bg-light border rounded small text-muted fst-italic shadow-sm">
+                                                @med.Notes
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-secondary fst-italic">— No notes —</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (canDispense)
+                                        {
+                                            <form asp-action="AdministerMedication" method="post" class="d-flex gap-2">
+                                                <input type="hidden" name="prescribedMedicationId" value="@med.Id" />
+                                                <textarea name="notes" rows="1"
+                                                  class="form-control form-control-sm rounded-3 shadow-sm stylish-notes"
+                                                  placeholder="Add notes..."></textarea>
+                                                <button type="submit" class="btn btn-success btn-sm shadow-sm">
+                                                    <i class="bi bi-check-circle"></i> Dispense
+                                                </button>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger">Not Authorized</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- Back Button -->
+            <div class="text-center mt-4">
+                <a asp-action="PendingPrescriptions" asp-controller="Nurse" class="btn btn-secondary px-4">
+                    <i class="bi bi-arrow-left-circle me-1"></i> Back
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .stylish-notes {
+        resize: none;
+        border: 1px solid #cce5ff;
+        background-color: #f9fcff;
+        transition: 0.2s;
+    }
+
+    .stylish-notes:focus {
+            border-color: #66afe9;
+            background-color: #ffffff;
+            box-shadow: 0 0 6px rgba(0,123,255,0.4);
+    }
+</style>
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var toastEl = document.getElementById("toastMessage");
+            if (toastEl) {
+                var toast = new bootstrap.Toast(toastEl);
+                toast.show();
+            }
+        });
+    </script>
+}
+

@@ -1,0 +1,159 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>@ViewBag.Title</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="~/css/User.css" />
+</head>
+
+
+<body>
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom box-shadow">
+            <div class="container-fluid">
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">
+                    <img src="~/Images/logo.png" alt="Wardconnect Logo" class="logo-img" style="height: 60px;" />
+                </a>
+
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent"
+                        aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarContent">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        @{
+                            string currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+                            string currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+                        }
+                        <li class="nav-item">
+                            <a class="nav-link text-dark @(currentController == "Home" && currentAction == "Index" ? "active fw-bold" : "")" asp-area="" asp-controller="Home" asp-action="Index">
+                                <i class="bi bi-house-door-fill me-1"></i> Home
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark @(currentController == "Home" && currentAction == "Privacy" ? "active fw-bold" : "")" asp-area="" asp-controller="Home" asp-action="Privacy">
+                                <i class="bi bi-shield-lock-fill me-1"></i> Privacy
+                            </a>
+                        </li>
+
+                        @if (User.IsInRole("User"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark @(currentController == "User" && currentAction == "Index" ? "active fw-bold" : "")" asp-controller="User" asp-action="Index">
+                                    <i class="bi bi-grid-1x2-fill me-1"></i> My Dashboard
+                                </a>
+                            </li>
+                        }
+
+                        @if (User.IsInRole("WardAdmin"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark @(currentController == "WardAdmin" && currentAction == "Index" ? "active fw-bold" : "")" asp-controller="WardAdmin" asp-action="Index">
+                                    <i class="bi bi-grid-1x2-fill me-1"></i> My Dashboard
+                                </a>
+                            </li>
+                        }
+
+                        @if (User.IsInRole("Nurse"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark @(currentController == "Nurse" && currentAction == "Index" ? "active fw-bold" : "")" asp-controller="Nurse" asp-action="Index">
+                                    <i class="bi bi-grid-1x2-fill me-1"></i> My Dashboard
+                                </a>
+                            </li>
+                        }
+
+                        @if (User.IsInRole("Sister"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark @(currentController == "Nurse" && currentAction == "Index" ? "active fw-bold" : "")" asp-controller="Nurse" asp-action="Index">
+                                    <i class="bi bi-grid-1x2-fill me-1"></i> My Dashboard
+                                </a>
+                            </li>
+                        }
+                        @if (User.IsInRole("Doctor"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark @(currentController == "Doctor" && currentAction == "Index" ? "active fw-bold" : "" )" asp-controller="Doctor" asp-action="Index">
+									<i class="bi bi-grid-1x2-fill me-1"></i> My Dashboard
+                                </a>
+                            </li>
+                        }
+
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="roleDropdown" role="button"
+                                   data-bs-toggle="dropdown" aria-expanded="false">
+                                    Switch Role
+                                </a>
+
+                                <!-- Single hidden form for switching roles -->
+                                <form asp-action="SwitchRole" asp-controller="Account" method="post" id="switchRoleForm" class="d-none">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="role" id="switchRoleInput" />
+                                </form>
+
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="roleDropdown">
+                                    <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); submitRole('Admin')">Admin</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); submitRole('Doctor')">Doctor</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); submitRole('Nurse')">Nurse</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); submitRole('WardAdmin')">Ward Admin</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="event.preventDefault(); submitRole('Sister')">Nurse Sister</a></li>
+                                </ul>
+                            </li>
+                        }
+
+                    </ul>
+                    <ul class="navbar-nav">
+                        <partial name="_LoginPartial" />
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main role="main">
+        @RenderBody()
+    </main>
+    <footer>
+        © 2025 DEVSQUAD. All rights reserved.
+        <div class="contact-info">
+            <p><i class="bi bi-envelope"></i> support@wardconnect.com | <i class="bi bi-telephone-fill"></i> +1 234 567 8901</p>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+   @*  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script> *@
+
+    <script>
+        function submitRole(role) {
+            document.getElementById("switchRoleInput").value = role;
+            document.getElementById("switchRoleForm").submit();
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+            var dropdownElementList = [].slice.call(document.querySelectorAll('.dropdown-toggle'));
+            dropdownElementList.map(function (dropdownToggleEl) {
+                return new bootstrap.Dropdown(dropdownToggleEl);
+            });
+        });
+    </script>
+
+   @*  <script src="https://cdn.tailwindcss.com"></script> *@
+    @await RenderSectionAsync("Scripts", required: false)
+
+   
+</body>
+</html>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
+
+

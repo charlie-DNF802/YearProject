@@ -1,0 +1,163 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<Ward_Management_System.Models.Users> UserManager
+@{
+    var user = await UserManager.GetUserAsync(User);
+    var fullName = user?.FullName ?? User.Identity.Name;
+}
+
+<main>
+    <br />
+    <!-- Welcome Section -->
+    <div class="home-box" data-aos="fade-down">
+        @if (User.Identity.IsAuthenticated)
+        {
+            <h1>Welcome @fullName to <span>WardConnect</span></h1>
+            <p>Your centralized solution for managing hospital wards, patients, staff, and care coordination.</p>
+        }
+        else
+        {
+            <h1>Welcome to <span>WardConnect</span></h1>
+            <p>Your centralized solution for managing hospital wards, patients, staff, and care coordination.</p>
+            <a href="/Account/Login" class="btn btn-primary mt-3">Login to Continue</a>
+        }
+    </div>
+
+
+    <!-- System Highlights -->
+    <h2 class="text-center mb-4 fw-bold" data-aos="fade-up">System Highlights</h2>
+    <div class="features">
+        <div data-aos="zoom-in" data-aos-delay="100">
+            <i class="bi bi-people-fill"></i>
+            <h4>Patient Records</h4>
+            <p>Maintain comprehensive and secure patient information.</p>
+        </div>
+        <div data-aos="zoom-in" data-aos-delay="200">
+            <i class="bi bi-hospital-fill"></i>
+            <h4>Ward Allocation</h4>
+            <p>Efficiently assign patients to appropriate wards and beds.</p>
+        </div>
+        <div data-aos="zoom-in" data-aos-delay="300">
+            <i class="bi bi-person-badge-fill"></i>
+            <h4>Staff Management</h4>
+            <p>Manage doctors, nurses, and caregivers with ease.</p>
+        </div>
+        <div data-aos="zoom-in" data-aos-delay="400">
+            <i class="bi bi-bell-fill"></i>
+            <h4>Real-time Updates</h4>
+            <p>Get instant notifications and updates across departments.</p>
+        </div>
+    </div>
+
+    <!-- About Section -->
+    <div class="about-section container my-5" data-aos="fade-up">
+        <h2 class="text-center">About the System</h2>
+        <div class="row align-items-center">
+            <div class="col-md-5 mb-4 mb-md-0">
+                <img src="~/images/about.jpeg" class="img-fluid rounded shadow" alt="About the Ward System" />
+            </div>
+            <div class="col-md-7">
+                <p class="lead">Our Ward Management System is built to help hospitals deliver efficient and secure patient care through easy-to-use digital tools.</p>
+                <p>From patient admission to discharge, our platform handles ward assignments, staff coordination, and real-time updates—all while maintaining strict privacy protocols.</p>
+                <p>Designed with hospitals in mind, it reduces admin workload and improves the patient experience at every level.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Services Section -->
+    <div class="services-section container my-5" data-aos="fade-up">
+        <h2 class="text-center ">Our Services</h2>
+        <div class="row mb-5 align-items-center" data-aos="fade-right">
+            <div class="col-md-5">
+                <img src="~/images/respiratory.jpeg" class="img-fluid rounded shadow service-img" alt="Respiratory Care" />
+            </div>
+            <div class="col-md-7">
+                <h4>Respiratory Care</h4>
+                <p>
+                    For patients coping with chronic respiratory conditions or recovering from severe lung illnesses, Our respiratory care program delivers expert,
+                    medically guided support and customized treatment plans designed to restore lung function, improve overall well-being, and foster better breathing.
+                </p>
+            </div>
+        </div>
+
+        <div class="row mb-5 align-items-center flex-md-row-reverse" data-aos="fade-left">
+            <div class="col-md-5">
+                <img src="~/images/nursery.jpg" class="img-fluid rounded shadow service-img" alt="Obstetrics & Nursery" />
+            </div>
+            <div class="col-md-7">
+                <h4>Obstetrics & Nursery</h4>
+                <p>
+                    At WardConnect, we provide a full range of prenatal, labor and delivery, and newborn care for expectant moms and their babies.
+                    Our clinic obstetricians work with you over the course of your pregnancy to monitor your baby’s development and do routine testing to help find and prevent possible problems
+                </p>
+            </div>
+        </div>
+
+        <div class="row mb-5 align-items-center" data-aos="fade-right">
+            <div class="col-md-5">
+                <img src="~/images/x-ray.jpg" class="img-fluid rounded shadow service-img" alt="Diagnostic Imaging" />
+            </div>
+            <div class="col-md-7">
+                <h4>Diagnostic Imaging</h4>
+                <p>
+                    At WardConnect, our Radiology Department delivers exceptional care with advanced imaging technology. Our board-certified, state-licensed technologists offer a full range of services, including 3D mammography, 64-slice CT scanning, cardiac calcium score CT scans, DEXA bone density scans, echocardiograms, fluoroscopy, MRI, nuclear medicine, ultrasound, and X-rays—conveniently close to home.
+
+                </p>
+            </div>
+        </div>
+
+        <div class="row mb-5 align-items-center flex-md-row-reverse" data-aos="fade-left">
+            <div class="col-md-5">
+                <img src="~/images/Behavioral-health.jpg" class="img-fluid rounded shadow service-img" alt="Behavioral Health" />
+            </div>
+            <div class="col-md-7">
+                <h4>Behavioral Health</h4>
+                <p>
+                    WardConnect has a team of behavioral health professionals trained to provide a range of mental and behavioral health needs, including anxiety,
+                    depression, adjusting to challenging life situations, bipolar and related disorders, grief and loss, substance use, and addictive disorders.
+                </p>
+            </div>
+        </div>
+
+        <div class="row mb-5 align-items-center" data-aos="fade-right">
+            <div class="col-md-5">
+                <img src="~/images/surgery.jpg" class="img-fluid rounded shadow service-img" alt="Surgery" />
+
+            </div>
+            <div class="col-md-7">
+                <h4>Surgery</h4>
+                <p>
+                    At WardConnect, our world-class surgical team, under the leadership of Dr. Carter Smith, has experience in a wide range of procedures,
+                    providing the best in surgical care in an advanced facility and using state-of-the-art equipment.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Testimonials -->
+    <div class="testimonials my-5" data-aos="fade-up">
+        <h2>What Users Say</h2>
+        <div class="testimonial" data-aos="fade-right">
+            “This system made it easy for our staff to manage patient care efficiently.” – Dr. James K.
+        </div>
+        <div class="testimonial" data-aos="fade-left">
+            “The ward allocation and notifications saved us hours every day.” – Nurse Linda T.
+        </div>
+    </div>
+
+    <!-- Quick Links -->
+    <div class="quick-links" data-aos="zoom-in-up">
+        <h2>Quick Access</h2>
+        <a href="/Admin/Admin">Admin Dashboard</a>
+        <a href="/User/Index">User Portal</a>
+    </div>
+</main>
+
+
+
+
+
+
+

@@ -1,0 +1,127 @@
+﻿@using Ward_Management_System.ViewModels;
+@model RegisterViewModel;
+
+@{
+	ViewData["Title"] = "Register";
+	Layout = "~/Views/Shared/_AccountLayout.cshtml";
+}
+
+<div class="account-container d-flex justify-content-center align-items-center vh-100">
+    <div class="account-box shadow p-4 rounded" style="max-width: 900px; width: 100%;">
+        <h2 class="text-center mb-4">Register</h2>
+        <form asp-action="Register" method="post">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label asp-for="Name" class="form-label">Name:</label>
+                    <input asp-for="Name" class="form-control" required pattern="[A-Za-z\s]{2,50}" />
+                    <span asp-validation-for="Name" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label asp-for="IdNumber" class="form-label">ID Number:</label>
+                    <input asp-for="IdNumber" type="text" class="form-control" id="IdNumber"  maxlength="13"
+                           minlength="13" pattern="\d{13}" inputmode="numeric" />
+                    <span asp-validation-for="IdNumber" class="text-danger"></span>
+                </div>
+
+
+                <div class="col-md-6 mb-3">
+                    <label asp-for="EmailAddress" class="form-label">Email:</label>
+                    <input asp-for="EmailAddress" class="form-control" type="email" />
+                    <span asp-validation-for="EmailAddress" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label asp-for="Age" class="form-label">Age:</label>
+                    <input asp-for="Age" class="form-control" type="number" min="18" max="120" id="Age" readonly/>
+                    <span asp-validation-for="Age" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label asp-for="Address" class="form-label">Address:</label>
+                    <input asp-for="Address" class="form-control" />
+                    <span asp-validation-for="Address" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label asp-for="PhoneNumber" class="form-label">Phone:</label>
+                    <input asp-for="PhoneNumber" class="form-control" required maxlength="10" />
+                    <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label asp-for="Gender" class="form-label">Gender:</label>
+                    <select asp-for="Gender" class="form-control">
+                        <option value="">Select</option>
+                        <option>Male</option>
+                        <option>Female</option>
+                        <option>Other</option>
+                    </select>
+                    <span asp-validation-for="Gender" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label asp-for="Password" class="form-label">Password:</label>
+                    <input asp-for="Password" class="form-control" type="password" minlength="6" />
+                    <span asp-validation-for="Password" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label asp-for="ConfirmPassword" class="form-label">Confirm Password:</label>
+                    <input asp-for="ConfirmPassword" class="form-control" type="password" minlength="6" />
+                    <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                </div>
+            </div>
+
+            <input type="submit" value="Register" class="btn btn-primary w-100 p-2 mt-2" />
+            <p class="text-center mt-2">
+                Already have an account? <a asp-controller="Account" asp-action="Login" class="text-decoration-none">Login</a>
+            </p>
+            <div class="text-center">
+                <a asp-controller="Home" asp-action="Index" class="text-decoration-none mt-3">Back</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+	@{
+		await Html.RenderPartialAsync("_validationScriptsPartial.cshtml");
+	}
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var idInput = document.getElementById("IdNumber");
+            var ageInput = document.getElementById("Age");
+
+            idInput.addEventListener("input", function () {
+                var id = idInput.value;
+
+                if (id.length === 13) {
+                    var year = parseInt(id.substring(0, 2), 10);
+                    var month = parseInt(id.substring(2, 4), 10) - 1; // JS months are 0-11
+                    var day = parseInt(id.substring(4, 6), 10);
+
+                    // Determine century (assuming IDs for people born 1900-2099)
+                    var currentYear = new Date().getFullYear() % 100;
+                    var century = (year <= currentYear) ? 2000 : 1900;
+                    year += century;
+
+                    var birthDate = new Date(year, month, day);
+                    var age = new Date().getFullYear() - birthDate.getFullYear();
+                    var m = new Date().getMonth() - birthDate.getMonth();
+
+                    if (m < 0 || (m === 0 && new Date().getDate() < birthDate.getDate())) {
+                        age--;
+                    }
+
+                    ageInput.value = age;
+                } else {
+                    ageInput.value = "";
+                }
+            });
+        });
+    </script>
+}

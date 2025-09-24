@@ -1,0 +1,42 @@
+﻿@model List<Ward_Management_System.Models.PatientVitals>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">
+        No vitals recorded yet.
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>Date</th>
+                    <th>Blood Type</th>
+                    <th>Blood Pressure</th>
+                    <th>Heart Rate</th>
+                    <th>Temperature (°C)</th>
+                    <th>Respiratory Rate</th>
+                    <th>Oxygen Saturation</th>
+                    <th>Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var vital in Model)
+                {
+                    <tr>
+                        <td>@vital.VitalsDate.ToString("g")</td>
+                        <td>@vital.BloodType</td>
+                        <td>@vital.BloodPressure</td>
+                        <td>@vital.HeartRate bpm</td>
+                        <td>@vital.Temperature</td>
+                        <td>@vital.RespiratoryRate</td>
+                        <td>@vital.OxygenSaturation %</td>
+                        <td>@vital.Notes</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

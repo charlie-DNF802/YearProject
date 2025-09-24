@@ -1,0 +1,431 @@
+﻿@model IEnumerable<Ward_Management_System.ViewModels.StaffListViewModel>
+@using System.Text.Json
+
+@{
+    ViewData["Title"] = "Staff List";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+
+    // Ensure the ViewBag contains the necessary data for pagination
+    Pager pager = new Pager();
+    int pageNo = 0;
+    if (ViewBag.Pager != null)
+    {
+        pager = ViewBag.Pager;
+        pageNo = pager.CurrentPage;
+    }
+}
+@if (TempData["ToastMessage"] != null)
+{
+    <div aria-live="polite" aria-atomic="true" class="position-relative">
+        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080;">
+            <div id="toastMessage" class="toast align-items-center text-bg-success border-0 shadow" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        @TempData["ToastMessage"]
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="container-fluid patient-dashboard py-5">
+    <!-- Header Row -->
+    <div class="row mb-4 align-items-center">
+        <div class="col-md-8">
+            <h2 class="fw-bold text-dark">Employee Overview</h2>
+        </div>
+        <div class="col-md-4 text-md-end mt-3 mt-md-0">
+            <a class="btn btn-primary" asp-controller="Admin" asp-action="AddStaff">
+                <i class="bi bi-person-plus-fill"></i> Register Staff
+            </a>
+        </div>
+    </div>
+  
+    <!-- Back Button -->
+    <div class="mt-4">
+        <a asp-controller="Admin" asp-action="Admin" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left-circle"></i> Back
+        </a>
+    </div>
+    <br/>
+
+    <!-- Filtering form -->
+    <form method="get" asp-controller="Admin" asp-action="StaffList" class="d-flex align-items-center mb-4 flex-wrap gap-3 w-100">
+
+        <!-- Role Filter -->
+        <select class="form-select" name="role" style="width: 300px;">
+            <option value="">All Roles</option>
+            <option value="Doctor" selected="@(ViewBag.CurrentRole == "Doctor" ? "selected" : null)">Doctors</option>
+            <option value="Nurse" selected="@(ViewBag.CurrentRole == "Nurse" ? "selected" : null)">Nurses</option>
+            <option value="Sister" selected="@(ViewBag.CurrentRole == "Sister" ? "selected" : null)">Nurse Sisters</option>
+            <option value="WardAdmin" selected="@(ViewBag.CurrentRole == "WardAdmin" ? "selected" : null)">Ward Admins</option>
+        </select>
+
+        <!-- Gender Filter -->
+        <select class="form-select" name="gender" style="width: 300px;">
+            <option value="">All Genders</option>
+            <option value="Male" selected="@(ViewBag.CurrentGender == "Male" ? "selected" : null)">Male</option>
+            <option value="Female" selected="@(ViewBag.CurrentGender == "Female" ? "selected" : null)">Female</option>
+            <option value="Other" selected="@(ViewBag.CurrentGender == "Other" ? "selected" : null)">Other</option>
+        </select>
+
+        <!-- Age Group Filter -->
+        <select class="form-select" name="ageGroup" style="width: 300px;">
+            <option value="">All Age Groups</option>
+            <option value="young" selected="@(ViewBag.CurrentAgeGroup == "young" ? "selected" : null)">Under 30</option>
+            <option value="middle" selected="@(ViewBag.CurrentAgeGroup == "middle" ? "selected" : null)">30-50</option>
+            <option value="senior" selected="@(ViewBag.CurrentAgeGroup == "senior" ? "selected" : null)">50+</option>
+        </select>
+
+        <!-- Search Input + Buttons -->
+        <div class="input-group" style="flex: 1; min-width: 300px;">
+            <input type="text" name="search" value="@(ViewBag.CurrentSearch ?? "")" class="form-control" placeholder="Search staff..." />
+            <button type="submit" class="btn btn-primary">Filter</button>
+            <a class="btn btn-outline-secondary" asp-controller="Admin" asp-action="StaffList">Clear</a>
+        </div>
+
+    </form>
+
+    <!-- Stats & Table -->
+    <div class="row">
+        <!-- Table -->
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow-sm">
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info text-center">
+            There are no registered employees yet!.
+        </div>
+    }
+    else
+    {
+        <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle" id="staffTable">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>#</th>
+                                <th>Full Name</th>
+                                <th>Email</th>
+                                <th>Roles</th>
+                                <th>Age</th>
+                                <th>Address</th>
+                                <th>Phone Number</th>
+                                <th>ID Number</th>
+                                <th>Gender</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{
+                                int count = 1;
+                            }
+                            @foreach (var staff in Model)
+                            {
+                                <tr>
+                                    <td>@count</td>
+                                    <td>@staff.FullName</td>
+                                    <td>@staff.Email</td>
+                                    <td>
+                                        @foreach (var role in staff.Roles.Split(","))
+                                        {
+                                            var trimmedRole = role.Trim();
+                                            var badgeClass = trimmedRole switch
+                                            {
+                                                "Doctor" => "badge bg-primary",
+                                                "Nurse" => "badge bg-success",
+                                                "Sister" => "badge bg-warning text-dark",
+                                                "Ward Admin" => "badge bg-info text-dark",
+                                                _ => "badge bg-secondary"
+                                            };
+                                            <span class="@badgeClass me-1">@trimmedRole</span>
+                                        }
+                                    </td>
+                                    <td>@staff.Age</td>
+                                    <td>@staff.Address</td>
+                                    <td>@staff.PhoneNumber</td>
+                                    <td>@staff.IdNumber</td>
+                                    <td>@staff.Gender</td>
+                                    <td>
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-primary"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#editModal"
+                                                data-id="@staff.Id"
+                                                data-name="@staff.FullName"
+                                                data-age="@staff.Age"
+                                                data-address="@staff.Address"
+                                                data-phone="@staff.PhoneNumber"
+                                                data-idnumber="@staff.IdNumber"
+                                                data-gender="@staff.Gender"
+                                                data-email="@staff.Email"
+                                                data-role="@staff.Roles">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-danger"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#deleteModal"
+                                                data-id="@staff.Id"
+                                                data-name="@staff.FullName"
+                                                data-email="@staff.Email"
+                                                data-role="@staff.Roles">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+
+                                    </td>
+                                </tr>
+                                count++;
+                            }
+                        </tbody>
+                    </table>
+                            <!-- Paging -->
+                            @if (ViewBag.Pager != null && ViewBag.Pager.TotalPages > 0)
+                            {
+                                <ul class="pagination justify-content-end">
+                                    @if (ViewBag.Pager.CurrentPage > 1)
+                                    {
+                                        <li class="page-item">
+                                            <a class="page-link" asp-action="StaffList" asp-route-pg="1" asp-route-role="@(ViewBag.CurrentRole)" asp-route-gender="@(ViewBag.CurrentGender)" asp-route-ageGroup="@(ViewBag.CurrentAgeGroup)" asp-route-search="@(ViewBag.CurrentSearch)">First</a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" asp-action="StaffList" asp-route-pg="@(ViewBag.Pager.CurrentPage - 1)" asp-route-role="@(ViewBag.CurrentRole)" asp-route-gender="@(ViewBag.CurrentGender)" asp-route-ageGroup="@(ViewBag.CurrentAgeGroup)" asp-route-search="@(ViewBag.CurrentSearch)">Previous</a>
+                                        </li>
+                                    }
+                                    @for (var pge = ViewBag.Pager.StartPage; pge <= ViewBag.Pager.EndPage; pge++)
+                                    {
+                                        <li class="page-item @(pge == ViewBag.Pager.CurrentPage ? "active" : "")">
+                                            <a class="page-link" asp-action="StaffList" asp-route-pg="@pge" asp-route-role="@(ViewBag.CurrentRole)" asp-route-gender="@(ViewBag.CurrentGender)" asp-route-ageGroup="@(ViewBag.CurrentAgeGroup)" asp-route-search="@(ViewBag.CurrentSearch)">@pge</a>
+                                        </li>
+                                    }
+                                    @if (ViewBag.Pager.CurrentPage < ViewBag.Pager.TotalPages)
+                                    {
+                                        <li class="page-item">
+                                            <a class="page-link" asp-action="StaffList" asp-route-pg="@(ViewBag.Pager.CurrentPage + 1)" asp-route-role="@(ViewBag.CurrentRole)" asp-route-gender="@(ViewBag.CurrentGender)" asp-route-ageGroup="@(ViewBag.CurrentAgeGroup)" asp-route-search="@(ViewBag.CurrentSearch)">Next</a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" asp-action="StaffList" asp-route-pg="@(ViewBag.Pager.TotalPages)" asp-route-role="@(ViewBag.CurrentRole)" asp-route-gender="@(ViewBag.CurrentGender)" asp-route-ageGroup="@(ViewBag.CurrentAgeGroup)" asp-route-search="@(ViewBag.CurrentSearch)">Last</a>
+                                        </li>
+                                    }
+                                </ul>
+                            }
+
+                </div>
+
+                    <!-- Delete Confirmation Modal -->
+                    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content border-0 shadow">
+                                <div class="modal-header bg-danger text-white">
+                                    <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p class="lead text-danger">Are you sure you want to delete this employee?</p>
+                                    <dl class="row">
+                                        <dt class="col-sm-4">Name:</dt>
+                                        <dd class="col-sm-8" id="modalName"></dd>
+
+                                        <dt class="col-sm-4">Email:</dt>
+                                        <dd class="col-sm-8" id="modalEmail"></dd>
+
+                                        <dt class="col-sm-4">Role:</dt>
+                                        <dd class="col-sm-8" id="modalRole"></dd>
+                                    </dl>
+                                    <form id="deleteForm" method="post" asp-action="SoftDelete">
+                                        <input type="hidden" name="id" id="modalUserId" />
+                                    </form>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="submit" form="deleteForm" class="btn btn-danger">Confirm Delete</button>
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Edit Modal -->
+                    <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content border-0 shadow">
+                                <div class="modal-header bg-warning text-dark ">
+                                    <h5 class="modal-title" id="editModalLabel">Edit Staff</h5>
+                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                </div>
+                                <form id="editForm" method="post" asp-action="EditStaff">
+                                    <div class="modal-body">
+                                        <input type="hidden" name="Id" id="editUserId" />
+
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <label class="form-label">Full Name</label>
+                                                <input name="Name" id="editName" class="form-control" required />
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Age</label>
+                                                <input name="Age" id="editAge" class="form-control" type="number" min="18" max="100" required />
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Email</label>
+                                                <input name="Email" id="editEmail" class="form-control" required />
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">
+                                                    Default Password
+                                                    <i class="bi bi-info-circle ms-1 text-muted" data-bs-toggle="tooltip" title="Leave this blank to retain the existing password."></i>
+                                                </label>
+                                                <input name="DefaultPassword" id="editPassword" class="form-control" placeholder="Leave blank to keep current password" />
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <label class="form-label">Phone Number</label>
+                                                <input name="PhoneNumber" id="editPhone" class="form-control" />
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">ID Number</label>
+                                                <input name="IdNumber" id="editIdNumber" class="form-control" />
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Address</label>
+                                                <input name="Address" id="editAddress" class="form-control" />
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Gender</label>
+                                                <select name="Gender" id="editGender" class="form-select">
+                                                    <option value="">-- Select Gender --</option>
+                                                    <option value="Male">Male</option>
+                                                    <option value="Female">Female</option>
+                                                    <option value="Other">Other</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label class="form-label">Role</label>
+                                                <select name="Role" id="editRole" class="form-select">
+                                                    <option value="">-- Select Role --</option>
+                                                    <option value="WardAdmin">Ward Admin</option>
+                                                    <option value="Nurse">Nurse</option>
+                                                    <option value="Sister">Sister</option>
+                                                    <option value="Doctor">Doctor</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="submit" class="btn btn-warning rounded-pill shadow-sm text-dark">Save Changes</button>
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+
+            </div>
+       
+                }
+
+            </div>
+        </div>
+
+        <!-- Stats Panel -->
+        <div class="col-lg-4">
+            <div class="row g-3">
+                <div class="col-12">
+                    <div class="card bg-primary text-white shadow">
+                        <div class="card-body text-center">
+                            <h6>Total Staff</h6>
+                            <h4>@ViewBag.TotalStaff</h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="card bg-info text-white shadow">
+                        <div class="card-body text-center">
+                            <h6>Doctors</h6>
+                            <h4>@ViewBag.DoctorCount</h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="card bg-success text-white shadow">
+                        <div class="card-body text-center">
+                            <h6>Nurses</h6>
+                            <h4>@ViewBag.NurseCount</h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="card bg-warning text-dark shadow">
+                        <div class="card-body text-center">
+                            <h6>Nurse Sisters</h6>
+                            <h4>@ViewBag.SisterCount</h4>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="card bg-dark text-white shadow">
+                        <div class="card-body text-center">
+                            <h6>Ward Admins</h6>
+                            <h4>@ViewBag.WardAdminCount</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    <script>
+    
+        //Delete
+        const deleteModal = document.getElementById('deleteModal');
+
+        deleteModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+            const userId = button.getAttribute('data-id');
+            const userName = button.getAttribute('data-name');
+            const userEmail = button.getAttribute('data-email');
+            const userRole = button.getAttribute('data-role');
+
+            // Update modal content
+            document.getElementById('modalUserId').value = userId;
+            document.getElementById('modalName').textContent = userName;
+            document.getElementById('modalEmail').textContent = userEmail;
+            document.getElementById('modalRole').textContent = userRole;
+        });
+
+        //Edit
+         const editModal = document.getElementById('editModal');
+
+        editModal.addEventListener('show.bs.modal', function (event) {
+            const button = event.relatedTarget;
+
+            document.getElementById('editUserId').value = button.getAttribute('data-id');
+            document.getElementById('editName').value = button.getAttribute('data-name');
+            document.getElementById('editAge').value = button.getAttribute('data-age');
+            document.getElementById('editEmail').value = button.getAttribute('data-email');
+            document.getElementById('editPhone').value = button.getAttribute('data-phone');
+            document.getElementById('editIdNumber').value = button.getAttribute('data-idnumber');
+            document.getElementById('editAddress').value = button.getAttribute('data-address');
+            document.getElementById('editGender').value = button.getAttribute('data-gender');
+
+            // Extract first role only if multiple
+            const role = button.getAttribute('data-role').split(',')[0].trim();
+            document.getElementById('editRole').value = role;
+
+            document.getElementById('editPassword').value = "";
+        });
+    </script>
+}
+
+
+
+
+
+
+

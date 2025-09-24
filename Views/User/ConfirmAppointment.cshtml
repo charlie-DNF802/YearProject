@@ -1,0 +1,157 @@
+﻿@model Ward_Management_System.ViewModels.AppointmentBookingDetailsVM
+@using Microsoft.AspNetCore.Identity
+@inject UserManager<Ward_Management_System.Models.Users> UserManager
+@{
+    ViewData["Title"] = "Confirm Appointment";
+    Layout = "~/Views/Shared/_UserLayout.cshtml";
+    var user = await UserManager.GetUserAsync(User);
+}
+
+@{
+    int calculatedAge = 0;
+    if (!string.IsNullOrEmpty(user?.IdNumber) && user.IdNumber.Length >= 6)
+    {
+        var yearPart = int.Parse(user.IdNumber.Substring(0, 2));
+        var monthPart = int.Parse(user.IdNumber.Substring(2, 2));
+        var dayPart = int.Parse(user.IdNumber.Substring(4, 2));
+
+        var currentYear = DateTime.Now.Year % 100;
+        var century = (yearPart <= currentYear) ? 2000 : 1900;
+
+        var birthDate = new DateTime(century + yearPart, monthPart, dayPart);
+        calculatedAge = DateTime.Today.Year - birthDate.Year;
+        if (birthDate.Date > DateTime.Today.AddYears(-calculatedAge)) calculatedAge--;
+    }
+}
+
+
+<div class="container-fluid patient-dashboard py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="text-center mb-4">
+                <h2 class="fw-bold text-dark">Appointment Booking</h2>
+                <p class="text-muted">Please confirm the doctor & time then fill in the information.</p>
+            </div>
+            <!-- Appointment summary card -->
+            <div class="card shadow-lg border-0 rounded-4 mb-4">
+                <div class="card-header text-white fw-bold rounded-top-4" style="background: var(--hospital-blue, #007bff);">
+                    Confirm Your Appointment
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info rounded-3">
+                        Booking for Dr <strong>@ViewBag.Doctor.FullName</strong>
+                        on <strong>@Model.PreferredDate.ToString("yyyy-MM-dd")</strong> at
+                        <strong>@Model.PreferredTime.ToString(@"hh\:mm")</strong>
+                    </div>
+
+                    <form asp-action="ConfirmAppointment" method="post" class="needs-validation" novalidate>
+                        <input type="hidden" asp-for="DoctorId" />
+                        <input type="hidden" asp-for="PreferredDate" />
+                        <input type="hidden" asp-for="PreferredTime" />
+
+                        <!-- Booking For -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Booking For</label>
+                            <select asp-for="BookingFor" class="form-select" id="bookingFor" required>
+                                <option value="">-- Select --</option>
+                                <option value="Self">Myself</option>
+                                <option value="Other">Someone Else</option>
+                            </select>
+                            <div class="invalid-feedback">Please select who the booking is for.</div>
+                        </div>
+
+                        <!-- Self Info -->
+                        <div class="self-info d-none">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Full Name</label>
+                                    <input class="form-control" value="@user?.FullName" readonly />
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label class="form-label">Age</label>
+                                    <input class="form-control" value="@calculatedAge" readonly />
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label class="form-label">Gender</label>
+                                    <input class="form-control" value="@user?.Gender" readonly />
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">ID Number</label>
+                                <input class="form-control" value="@user?.IdNumber" readonly />
+                            </div>
+                        </div>
+
+                        <!-- Other Info -->
+                        <div class="other-info d-none">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Full Name</label>
+                                    <input asp-for="OtherPersonName" class="form-control" />
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label class="form-label">Age</label>
+                                    <input asp-for="OtherPersonAge" class="form-control" type="number" min="0" />
+                                </div>
+                                <div class="col-md-3 mb-3">
+                                    <label asp-for="OtherPersonGender" class="form-label">Gender</label>
+                                    <select asp-for="OtherPersonGender" class="form-select">
+                                        <option value="">-- Select Gender --</option>
+                                        <option>Male</option>
+                                        <option>Female</option>
+                                        <option>Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">ID Number</label>
+                                <input asp-for="OtherPersonIdNumber" class="form-control" />
+                            </div>
+                        </div>
+
+                        <!-- Reason -->
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Reason for Appointment</label>
+                            <textarea asp-for="Reason" class="form-control" rows="3"></textarea>
+                        </div>
+
+                        <!-- Submit + Back Buttons -->
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="ChooseDoctorTime" asp-route-doctorId="@Model.DoctorId" class="btn btn-outline-secondary px-4 py-2 rounded-3 shadow-sm">
+                                <i class="bi bi-arrow-left me-2"></i> Back
+                            </a>
+
+                            <button type="submit" class="btn btn-success px-4 py-2 rounded-3 shadow-sm">
+                                <i class="bi bi-calendar-check me-2"></i> Confirm Booking
+                            </button>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        const bookingSelect = document.getElementById("bookingFor");
+        const selfInfo = document.querySelectorAll(".self-info");
+        const otherInfo = document.querySelectorAll(".other-info");
+
+        bookingSelect.addEventListener("change", () => {
+            if (bookingSelect.value === "Self") {
+                selfInfo.forEach(el => el.classList.remove("d-none"));
+                otherInfo.forEach(el => el.classList.add("d-none"));
+            } else if (bookingSelect.value === "Other") {
+                otherInfo.forEach(el => el.classList.remove("d-none"));
+                selfInfo.forEach(el => el.classList.add("d-none"));
+            } else {
+                selfInfo.forEach(el => el.classList.add("d-none"));
+                otherInfo.forEach(el => el.classList.add("d-none"));
+            }
+        });
+    </script>
+}
+

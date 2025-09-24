@@ -1,0 +1,141 @@
+﻿@using Ward_Management_System.ViewModels
+@model AppointmentBookingDetailsVM
+
+@{
+    ViewData["Title"] = "Schedule Follow-Up";
+    Layout = "~/Views/Shared/_UserLayout.cshtml"; 
+}
+
+<div class="container-fluid patient-dashboard py-5">
+    <div class="row justify-content-center mb-4 ">
+        <div class="col-md-10 text-center">
+            <h2 class="fw-bold text-primary">Schedule Follow-Up Appointment</h2>
+            <p>Create a follow up appointment for checks ups on patients</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-10 offset-md-1">
+            <form asp-action="ScheduleFollowUp" method="post" class="needs-validation" novalidate>
+                @Html.AntiForgeryToken()
+
+                <!-- Hidden values -->
+                <input type="hidden" asp-for="UserId" />
+                <input type="hidden" asp-for="DoctorId" />
+                <input type="hidden" asp-for="FullName" />
+                <input type="hidden" asp-for="Age" />
+                <input type="hidden" asp-for="Gender" />
+                <input type="hidden" asp-for="IdNumber" />
+
+                <!-- Patient Information -->
+                <div class="card shadow-sm border-0 rounded-3 mb-4">
+                    <div class="card-header text-white fw-semibold" style="background: linear-gradient(90deg, #0d6efd, #3b82f6);">
+                        <i class="bi bi-person-badge me-2"></i> Patient Information
+                    </div>
+                    <div class="card-body bg-light">
+                        <p><strong>Name:</strong> @Model.FullName</p>
+                        <p><strong>Age:</strong> @Model.Age</p>
+                        <p><strong>Gender:</strong> @Model.Gender</p>
+                        <p><strong>ID Number:</strong> @Model.IdNumber</p>
+                    </div>
+                </div>
+
+                <!-- Follow-Up Details -->
+                <div class="card shadow-sm border-0 rounded-3 mb-4">
+                    <div class="card-header text-white fw-semibold" style="background: linear-gradient(90deg, #198754, #20c997);">
+                        <i class="bi bi-calendar-event me-2"></i> Follow-Up Details
+                    </div>
+                    <div class="card-body bg-light">
+                        <div class="mb-3">
+                            <label asp-for="PreferredDate" class="form-label fw-semibold"></label>
+                            <input asp-for="PreferredDate" type="date" class="form-control" id="preferredDate"
+                                   value="@(Model.PreferredDate == default ? DateTime.Today.ToString("yyyy-MM-dd")
+                                   : Model.PreferredDate.ToString("yyyy-MM-dd"))" />
+                            <span asp-validation-for="PreferredDate" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="PreferredTime" class="form-label fw-semibold"></label>
+                            <select asp-for="PreferredTime" id="preferredTime" class="form-select">
+                                <option value="">-- Select Time --</option>
+                            </select>
+                            <span asp-validation-for="PreferredTime" class="text-danger small"></span>
+                            <small class="d-block mt-1" id="slotWarning"></small>
+                        </div>
+
+
+                        <div class="mb-3">
+                            <label asp-for="Reason" class="form-label fw-semibold"></label>
+                            <textarea asp-for="Reason" class="form-control" rows="3" placeholder="Reason for follow-up (optional)"></textarea>
+                            <span asp-validation-for="Reason" class="text-danger small"></span>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- Action buttons -->
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-calendar-check me-1"></i> Schedule Follow-Up
+                    </button>
+                    <a asp-action="DoctorAppointments" class="btn btn-outline-secondary px-4">
+                        <i class="bi bi-x-circle me-1"></i> Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+      
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const dateInput = document.getElementById("preferredDate");
+            const timeSelect = document.getElementById("preferredTime");
+            const warning = document.getElementById("slotWarning");
+            const doctorId = "@Model.DoctorId";
+
+            const allSlots = ["08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00"];
+
+            async function updateTimeSlots() {
+                const date = dateInput.value;
+                if (!date) return;
+
+                const response = await fetch(`/Doctor/GetTakenSlots?doctorId=${doctorId}&date=${date}`);
+                const takenSlots = await response.json();
+
+                timeSelect.innerHTML = '<option value="">-- Select Time --</option>';
+
+                allSlots.forEach(slot => {
+                    const option = document.createElement("option");
+                    option.value = slot;
+                    option.text = slot;
+                    if (takenSlots.includes(slot)) {
+                        option.disabled = true;
+                        option.text += " (Booked)";
+                    }
+                    timeSelect.appendChild(option);
+                });
+
+                // Check if the selected slot is still valid
+                if (takenSlots.includes(timeSelect.value)) {
+                    warning.textContent = "⚠ This time slot is already booked!";
+                    warning.className = "text-danger small";
+                } else {
+                    warning.textContent = "";
+                }
+            }
+
+            dateInput.addEventListener("change", updateTimeSlots);
+            updateTimeSlots(); // initial load
+        });
+    </script>
+
+}
+
+

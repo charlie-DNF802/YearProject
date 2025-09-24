@@ -1,0 +1,202 @@
+﻿@model IEnumerable<Ward_Management_System.ViewModels.PatientPrecriptionsViewModel>
+@{
+    ViewData["Title"] = "My Prescriptions";
+    Layout = "~/Views/Shared/_UserLayout.cshtml";
+}
+@if (TempData["ToastMessage"] != null)
+{
+    var toastType = TempData["ToastType"] ?? "success";
+    <div aria-live="polite" aria-atomic="true" class="position-relative">
+        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080;">
+            <div id="toastMessage" class="toast align-items-center text-bg-@toastType border-0 shadow" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        @TempData["ToastMessage"]
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="container-fluid patient-dashboard py-5">
+    <!-- Header -->
+    <div class="row justify-content-center mb-4 text-center">
+        <div class="col-md-10">
+            <h2 class="fw-bold text-primary">@ViewData["Title"]</h2>
+            <p class="lead text-muted">View a list of your prescriptions and update</p>
+        </div>
+    </div>
+
+    <!-- Search Input -->
+    <div class="row mb-4">
+        <div class="col-md-6 offset-md-3">
+            <input type="text" id="searchInput" class="form-control shadow-sm" placeholder="Search by name, ID Number" />
+        </div>
+    </div>
+
+    <!-- Card wrapping table -->
+    <div class="row">
+        <div class="col-md-10 offset-md-1">
+            <div class="card shadow-sm">
+                <div class="card-body p-0">
+                    @if (!Model.Any())
+                    {
+                        <div class="alert alert-info text-center m-0">
+                            You haven't prescribed any medications yet.
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="card-body">
+                            <table class="table table-hover align-middle mb-0" id="PrescriptionsTable">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Patient</th>
+                                        <th>Patient ID</th>
+                                        <th>Total Items</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @{
+                                        int count = 1;
+                                    }
+                                    @foreach (var patient in Model)
+                                    {
+                                        <tr>
+                                            <td>@count</td>
+                                            <td class="fw-semibold">@patient.PatientName</td>
+                                            <td>@patient.PatientIdNumber</td>
+                                            <td>@patient.TotalItems</td>
+                                            <td>
+                                                @if (patient.Status == "Completed")
+                                                {
+                                                    <span class="badge bg-success">Completed</span>
+                                                }
+                                                else if (patient.Status == "Pending")
+                                                {
+                                                    <span class="badge bg-warning text-dark">Pending</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">@patient.Status</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-info btn-sm view-prescriptions shadow-sm"
+                                                        data-patient-id="@patient.PatientIdNumber"
+                                                        data-patient-name="@patient.PatientName">
+                                                    <i class="bi bi-eye"></i> View
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        count++;
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Prescriptions Modal -->
+    <div class="modal fade" id="prescriptionsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Prescriptions for <span id="patientName"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Date Prescribed</th>
+                                <th>Medication</th>
+                                <th>Instructions</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="prescriptionsTableBody">
+                            <!-- Rows will be injected here -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Back Button -->
+    <div class="text-center mt-4">
+        <a asp-action="Index" asp-controller="Doctor" class="btn btn-secondary px-4">
+            <i class="bi bi-arrow-left-circle me-1"></i> Back to Dashboard
+        </a>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+         document.addEventListener("DOMContentLoaded", function () {
+            var toastEl = document.getElementById("toastMessage");
+            if (toastEl) {
+                var toast = new bootstrap.Toast(toastEl);
+                toast.show();
+            }
+        });
+
+        // Live search
+        document.getElementById("searchInput").addEventListener("keyup", function() {
+            const searchValue = this.value.toLowerCase();
+            const rows = document.querySelectorAll("#PrescriptionsTable tbody tr");
+            rows.forEach(row => {
+                const rowText = row.innerText.toLowerCase();
+                row.style.display = rowText.includes(searchValue) ? "" : "none";
+            });
+        });
+
+        // Handle view prescription modal
+        $(document).ready(function() {
+            $('.view-prescriptions').click(function() {
+                var patientId = $(this).data('patient-id');
+                var patientName = $(this).data('patient-name');
+
+                $.get('/Doctor/GetPatientPrescriptions', { patientIdNumber: patientId }, function(data) {
+                    $('#patientName').text(patientName);
+                    $('#prescriptionsTableBody').empty();
+
+                    data.forEach(function(prescription) {
+                        prescription.medications.forEach(function(med) {
+                            var instructions = `${med.dosage} - ${med.frequency} for ${med.duration}`;
+                            if (med.notes) instructions += `<br><small>${med.notes}</small>`;
+                            var row = `
+                                <tr>
+                                    <td>${new Date(prescription.prescribedDate).toLocaleDateString()}</td>
+                                    <td>${med.medicationName}</td>
+                                    <td>${instructions}</td>
+                                    <td>
+                                       <a href="/Doctor/UpdatePrescription?prescriptionId=${prescription.prescriptionId}" class="btn btn-primary btn-sm">Update</a>
+                                    </td>
+                                </tr>
+                            `;
+                            $('#prescriptionsTableBody').append(row);
+                        });
+                    });
+
+                    $('#prescriptionsModal').modal('show');
+                });
+            });
+        });
+    </script>
+}
+
+
+

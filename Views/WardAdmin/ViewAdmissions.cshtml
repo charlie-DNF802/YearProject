@@ -1,0 +1,276 @@
+﻿@model IEnumerable<Ward_Management_System.ViewModels.AdmissionViewModel>
+@{
+    ViewData["Title"] = "Admission List";
+    Layout = "~/Views/Shared/_UserLayout.cshtml";
+
+     Pager pager = new Pager();
+    int pageNo = 0;
+    if (ViewBag.Pager != null)
+    {
+        pager = ViewBag.Pager;
+        pageNo = pager.CurrentPage;
+    }
+}
+@{
+    var ModelFolderList = (List<PatientFolder>)ViewBag.ModelFolderList;
+}
+
+@if (TempData["ToastMessage"] != null)
+{
+    var toastType = TempData["ToastType"] ?? "success";
+    <div aria-live="polite" aria-atomic="true" class="position-relative">
+        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080;">
+            <div id="toastMessage" class="toast align-items-center text-bg-@toastType border-0 shadow" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        @TempData["ToastMessage"]
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="container-fluid patient-dashboard py-5">
+    <div class="row justify-content-center mb-4">
+        <div class="col-md-10 text-center">
+            <h2 class="fw-bold text-primary">List Of  Patients</h2>
+            <p class="text-muted">View and create patient folders.</p>
+        </div>
+    </div>
+
+     <!-- Search -->
+    <div class="row mb-4">
+        <div class="col-md-6 offset-md-3">
+            <input type="text" id="searchInput" class="form-control shadow-sm" placeholder="Search by name, ward, or ID...">
+        </div>
+    </div>
+
+    <!-- Admissions Table -->
+    <div class="row">
+        <div class="col-md-10 offset-md-1">
+            <div class="card shadow-sm">
+                @if (!Model.Any())
+                {
+                    <div class="alert alert-info text-center col-md-8 mx-auto shadow-sm">
+                        No Patients Admitted!
+                    </div>
+                }
+                else
+                {
+                    <div class="card-body">
+                            <table class="table table-hover align-middle" id="AdmissionTable">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Patient Name</th>
+                                        <th>ID Number</th>
+                                        <th>Location</th>
+                                        <th>Folder Status</th>
+                                        <th>Condition</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @{
+                                        int count = 1;
+                                    }
+                                    @foreach (var admission in Model)
+                                    {
+                                        <tr>
+                                            <td>@count</td>
+                                            <td>@admission.PatientName</td>
+                                            <td>@admission.IdNumber</td>
+                                            <td>@admission.WardName</td>
+                                            <td>
+                                                @if (admission.FolderStatus == "No Folder")
+                                                {
+                                                    <span class="badge bg-success">No Folder</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">Has Folder</span>
+                                                }
+                                            </td>
+                                            <td>@admission.Condition</td>
+                                            <td>
+                                                @if (admission.FolderStatus == "No Folder")
+                                                {
+                                                    <form asp-action="CreateFolder" asp-controller="WardAdmin" method="post">
+                                                        <input type="hidden" name="appointmentId" value="@admission.AppointmentId" />
+                                                        <button type="submit" class="btn btn-sm btn-primary">
+                                                            <i class="bi bi-folder-plus"></i> Create Folder
+                                                        </button>
+                                                    </form>
+                                                }
+                                                else
+                                                {
+                                                    <button type="button" class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#folderModal-@admission.AppointmentId">
+                                                        <i class="bi bi-folder2-open"></i> Open Folder
+                                                    </button>
+                                                }
+                                            </td>
+                                        </tr>
+                                        count++;
+                                         <!-- Folder Modal -->
+                                            <div class="modal fade" id="folderModal-@admission.AppointmentId" tabindex="-1" aria-labelledby="folderModalLabel-@admission.AppointmentId" aria-hidden="true">
+                                                <div class="modal-dialog modal-lg modal-dialog-centered">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title" id="folderModalLabel-@admission.AppointmentId">
+                                                                Folder for @admission.PatientName
+                                                            </h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            @{
+                                                                var folder = ModelFolderList.FirstOrDefault(f =>
+                                                                                            f.Appointment.FullName == admission.PatientName &&
+                                                                                            f.Appointment.IdNumber == admission.IdNumber);
+
+                                                            }
+
+                                                            @if (folder != null)
+                                                            {
+                                                                <div class="row mb-3">
+                                                                    <div class="col-md-6">
+                                                                        <strong>Created By:</strong> @folder.CreatedBy
+                                                                    </div>
+                                                                    <div class="col-md-6">
+                                                                        <strong>Created Date:</strong> @folder.CreatedDate.ToString("g")
+                                                                    </div>
+                                                                </div>
+
+                                                                <div class="row mb-3">
+                                                                    <div class="col-md-6">
+                                                                        <strong>ID Number:</strong> @folder.Appointment.IdNumber
+                                                                    </div>
+                                                                    <div class="col-md-6">
+                                                                        <strong>Gender:</strong> @folder.Appointment.Gender
+                                                                    </div>
+                                                                </div>
+
+                                                                <div class="row mb-3">
+                                                                    <div class="col-md-6">
+                                                                        <strong>Phone:</strong> @folder.Appointment.User.PhoneNumber
+                                                                    </div>
+                                                                    <div class="col-md-6">
+                                                                        <strong>Address:</strong> @folder.Appointment.User.Address
+                                                                    </div>
+                                                                </div>
+
+                                                                <div class="mb-2">
+                                                                    <strong>Status:</strong>
+                                                                    @if (admission.Status == "Admitted")
+                                                                    {
+                                                                        <span class="badge bg-primary">Admitted</span>
+                                                                    }
+                                                                    else if (admission.Status == "CheckedIn")
+                                                                    {
+                                                                        <span class="badge bg-success">Checked In</span>
+                                                                    }
+                                                                </div>
+
+                                                                @if (folder.Appointment.User.EmergencyContacts != null && folder.Appointment.User.EmergencyContacts.Any())
+                                                                {
+                                                                    <hr />
+                                                                    <h5>Emergency Contacts</h5>
+                                                                    @foreach (var e in folder.Appointment.User.EmergencyContacts)
+                                                                    {
+                                                                        <div class="row mb-2">
+                                                                            <div class="col-md-4"><strong>Name:</strong> @e.EmergencyName</div>
+                                                                            <div class="col-md-4"><strong>Phone:</strong> @e.EmergencyPhone</div>
+                                                                            <div class="col-md-4"><strong>Relationship:</strong> @e.EmergencyRelationship</div>
+                                                                        </div>
+                                                                    }
+                                                                }
+                                                            }
+                                                            else
+                                                            {
+                                                                <div class="alert alert-warning">
+                                                                    No folder found for this patient.
+                                                                </div>
+                                                            }
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                    }
+                                </tbody>
+                            </table>
+                          @*  Paging shared partial view *@
+                        <div class="=container">
+                            @if (pager.TotalPages > 0)
+                            {
+                                <ul class="pagination justify-content-end">
+                                    @if (pager.CurrentPage > 1)
+                                    {
+                                        <li class="page-item">
+                                            <a class="page-link" asp-controller="WardAdmin" asp-action="ViewAdmissions" asp-route-pg="1">First</a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" asp-controller="WardAdmin" asp-action="ViewAdmissions" asp-route-pg="@(pager.CurrentPage - 1)">Previous</a>
+                                        </li>
+                                    }
+                                    @for (var pge = pager.StartPage; pge <= pager.EndPage; pge++)
+                                    {
+                                        <li class="page-item @(pge == pager.CurrentPage ? "active" : "")">
+                                            <a class="page-link" asp-controller="WardAdmin" asp-action="ViewAdmissions" asp-route-pg="@pge">@pge</a>
+                                        </li>
+                                    }
+                                    @if (pager.CurrentPage < pager.TotalPages)
+                                    {
+                                        <li class="page-item">
+                                            <a class="page-link" asp-controller="WardAdmin" asp-action="ViewAdmissions" asp-route-pg="@(pager.CurrentPage + 1)">Next</a>
+                                        </li>
+                                        <li>
+                                            <a class="page-link" asp-controller="WardAdmin" asp-action="ViewAdmissions" asp-route-pg="@(pager.TotalPages)">Last</a>
+                                        </li>
+                                    }
+                                </ul>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    
+
+    <!-- Back Button -->
+    <div class="text-center mt-4">
+        <a asp-action="Index" asp-controller="WardAdmin" class="btn btn-secondary px-4">
+            <i class="bi bi-arrow-left-circle me-1"></i> Back to Dashboard
+        </a>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+      <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var toastEl = document.getElementById("toastMessage");
+            if (toastEl) {
+                var toast = new bootstrap.Toast(toastEl);
+                toast.show();
+            }
+        });
+
+        //Live Searching
+        document.getElementById("searchInput").addEventListener("keyup", function () {
+        const searchValue = this.value.toLowerCase();
+        const rows = document.querySelectorAll("#AdmissionTable tbody tr");
+
+        rows.forEach(row => {
+        const rowText = row.innerText.toLowerCase();
+        row.style.display = rowText.includes(searchValue) ? "" : "none";
+        });
+        });
+    </script>
+}
+

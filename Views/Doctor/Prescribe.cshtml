@@ -1,0 +1,185 @@
+﻿@model Ward_Management_System.ViewModels.PrescriptionViewModel
+@{
+    ViewData["Title"] = "Prescribe Medication";
+    Layout = "~/Views/Shared/_UserLayout.cshtml";
+    var meds = Model.Medications ?? new List<SelectListItem>();
+}
+
+<style>
+    .card {
+        border-radius: 12px;
+        border: 1px solid #dde3ea;
+    }
+
+    .card-body {
+        padding: 2rem;
+    }
+
+    table th, table td {
+        vertical-align: middle;
+        text-align: center;
+    }
+</style>
+
+@if (TempData["ToastMessage"] != null)
+{
+    var toastType = TempData["ToastType"] ?? "success";
+    <div aria-live="polite" aria-atomic="true" class="position-relative">
+        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080;">
+            <div id="toastMessage" class="toast align-items-center text-bg-@toastType border-0 shadow"
+                 role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        @TempData["ToastMessage"]
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto"
+                            data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="container-fluid patient-dashboard py-5">
+    <div class="row justify-content-center mb-4">
+        <div class="col-md-10 text-center">
+            <h2 class="fw-bold text-primary">
+                <i class="bi bi-capsule-pill me-2"></i> Prescribe Medication
+            </h2>
+            <p class="text-muted">Prescribe the required medication.</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-10 offset-md-1">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h2 class="text-primary fw-bold mb-4">
+                        Prescription for @Model.PatientName
+                    </h2>
+
+                    <form asp-action="Prescribe" method="post">
+                        <input type="hidden" asp-for="AppointmentId" />
+
+                        <!-- Medications Table -->
+                        <div class="table-responsive mb-3">
+                            <table class="table table-bordered align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Medication</th>
+                                        <th>Dosage</th>
+                                        <th>Frequency</th>
+                                        <th>Duration</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="medications-body">
+                                    @for (int i = 0; i < Model.Prescriptions.Count; i++)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <select name="Prescriptions[@i].MedId" class="form-select">
+                                                    <option value="">-- Select --</option>
+                                                    @foreach (var med in meds)
+                                                    {
+                                                        <option value="@med.Value">@med.Text</option>
+                                                    }
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <input type="text" name="Prescriptions[@i].Dosage" class="form-control" />
+                                            </td>
+                                            <td>
+                                                <input type="text" name="Prescriptions[@i].Frequency" class="form-control" />
+                                            </td>
+                                            <td>
+                                                <input type="text" name="Prescriptions[@i].Duration" class="form-control" />
+                                            </td>
+                                            <td>
+                                                <button type="button" class="btn btn-danger btn-sm remove-row">
+                                                    <i class="bi bi-trash"></i> Remove
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <button type="button" id="add-row" class="btn btn-primary mb-4">
+                            + Add Medication
+                        </button>
+
+                        <!-- Final Note -->
+                        <div class="mb-3">
+                            <label asp-for="FinalNote" class="form-label fw-bold"></label>
+                            <textarea asp-for="FinalNote" class="form-control" rows="3"></textarea>
+                            <span asp-validation-for="FinalNote" class="text-danger"></span>
+                        </div>
+
+                        <!-- Save Prescription -->
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="btn btn-success px-4">
+                                <i class="bi bi-save me-1"></i> Save Prescription
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <!-- Back Button -->
+        <div class="text-center mt-4">
+            <a asp-action="PatientPrescription" asp-controller="Doctor" class="btn btn-secondary px-4">
+                <i class="bi bi-arrow-left-circle me-1"></i> Back
+            </a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let rowIndex = @Model.Prescriptions.Count;
+        const meds = @Html.Raw(Json.Serialize(meds));
+
+        document.getElementById("add-row").addEventListener("click", function () {
+            const tableBody = document.getElementById("medications-body");
+            const row = document.createElement("tr");
+
+            row.innerHTML = `
+                <td>
+                    <select name="Prescriptions[${rowIndex}].MedId" class="form-select">
+                        <option value="">-- Select --</option>
+                        ${meds.map(m => `<option value="${m.value}">${m.text}</option>`).join("")}
+                    </select>
+                </td>
+                <td><input type="text" name="Prescriptions[${rowIndex}].Dosage" class="form-control" /></td>
+                <td><input type="text" name="Prescriptions[${rowIndex}].Frequency" class="form-control" /></td>
+                <td><input type="text" name="Prescriptions[${rowIndex}].Duration" class="form-control" /></td>
+                <td>
+                    <button type="button" class="btn btn-danger btn-sm remove-row">
+                        <i class="bi bi-trash"></i> Remove
+                    </button>
+                </td>
+            `;
+
+            tableBody.appendChild(row);
+            rowIndex++;
+        });
+
+        document.addEventListener("click", function (e) {
+            if (e.target.closest(".remove-row")) {
+                e.target.closest("tr").remove();
+            }
+        });
+
+        document.addEventListener("DOMContentLoaded", function () {
+            var toastEl = document.getElementById("toastMessage");
+            if (toastEl) {
+                var toast = new bootstrap.Toast(toastEl);
+                toast.show();
+            }
+        });
+    </script>
+}
+
+

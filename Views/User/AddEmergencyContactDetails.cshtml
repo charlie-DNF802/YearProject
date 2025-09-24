@@ -1,0 +1,100 @@
+﻿@model Ward_Management_System.Models.EmergencyContact
+@{
+    ViewData["Title"] = "Emergency Details";
+    Layout = "~/Views/Shared/_UserLayout.cshtml";
+}
+
+@if (TempData["ToastMessage"] != null)
+{
+    var toastType = TempData["ToastType"] ?? "success";
+    <div aria-live="polite" aria-atomic="true" class="position-relative">
+        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080;">
+            <div id="toastMessage" class="toast align-items-center text-bg-@toastType border-0 shadow" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body fw-semibold">
+                        @TempData["ToastMessage"]
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<main class="patient-dashboard">
+    <div class="container py-4">
+        <div class="row justify-content-center text-center mb-5">
+            <div class="col-lg-8">
+                <h1 class="display-4 fw-bold text-dark">Emergency Contacts</h1>
+                <p class="lead text-muted">Emergency contacts to help in times of emergency.</p>
+            </div>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-6 col-md-8">
+                <div class="card dashboard-card border-purple shadow-sm">
+                    <div class="card-header bg-purple text-white text-center rounded-top">
+                        <h4 class="mb-0"><i class="bi bi-telephone-fill me-2"></i>Add Emergency Contact</h4>
+                    </div>
+                    <div class="card-body">
+                        <form asp-action="AddEmergencyContactDetails">
+                            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                            <div class="mb-3">
+                                <label asp-for="EmergencyName" class="form-label fw-semibold text-purple"></label>
+                                <input asp-for="EmergencyName" class="form-control border-purple" />
+                                <span asp-validation-for="EmergencyName" class="text-danger"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="EmergencyPhone" class="form-label fw-semibold text-purple"></label>
+                                <input asp-for="EmergencyPhone" class="form-control border-purple" />
+                                <span asp-validation-for="EmergencyPhone" class="text-danger"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="EmergencyEmail" class="form-label fw-semibold text-purple"></label>
+                                <input asp-for="EmergencyEmail" class="form-control border-purple" type="email" />
+                                <span asp-validation-for="EmergencyEmail" class="text-danger"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="EmergencyRelationship" class="form-label fw-semibold text-purple"></label>
+                                <input asp-for="EmergencyRelationship" class="form-control border-purple" />
+                                <span asp-validation-for="EmergencyRelationship" class="text-danger"></span>
+                            </div>
+
+                            <input type="hidden" asp-for="UserId" value="@ViewBag.UserId" />
+
+                            <div class="d-grid">
+                                <button type="submit" class="btn bg-purple text-white fw-semibold shadow-sm">
+                                    <i class="bi bi-plus-circle me-2"></i> Save Contact
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="card-footer text-center bg-light">
+                        <a asp-action="Index" class="text-purple fw-semibold text-decoration-none">
+                            <i class="bi bi-arrow-left-circle me-1"></i> Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var toastEl = document.getElementById("toastMessage");
+            if (toastEl) {
+                var toast = new bootstrap.Toast(toastEl, { delay: 4000 });
+                toast.show();
+            }
+        });
+    </script>
+}
+

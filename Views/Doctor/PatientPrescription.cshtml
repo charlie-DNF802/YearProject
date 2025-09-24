@@ -1,0 +1,130 @@
+﻿@model IEnumerable<Ward_Management_System.Models.Appointment>
+
+@{
+    ViewData["Title"] = "My Patients";
+    Layout = "~/Views/Shared/_UserLayout.cshtml";
+}
+@if (TempData["ToastMessage"] != null)
+{
+    var toastType = TempData["ToastType"] ?? "success";
+    <div aria-live="polite" aria-atomic="true" class="position-relative">
+        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080;">
+            <div id="toastMessage" class="toast align-items-center text-bg-@toastType border-0 shadow" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        @TempData["ToastMessage"]
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+<div class="container-fluid patient-dashboard py-5">
+    <div class="row justify-content-center mb-4 ">
+        <div class="col-md-10 text-center">
+            <h2 class="fw-bold text-primary">My Patients</h2>
+            <p>Select Patient & Prescribe Medication</p>
+        </div>
+    </div>
+
+    @* Live Searching  *@
+    <div class="row mb-4">
+        <div class="col-md-6 offset-md-3">
+            <input type="text" id="searchInput" class="form-control shadow-sm" placeholder="Search by name, or ID...">
+        </div>
+    </div>
+
+
+
+    <div class="row">
+        <div class="col-md-10 offset-md-1">
+            <div class="card shadow-sm">
+                @if (!Model.Any())
+                {
+                    <div class="alert alert-info">No patients found.</div>
+                }
+                else
+                {
+                    <div class="card-body">
+                        <table class="table table-hover align-middle" id="MyPatientsTable">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Full Name</th>
+                                    <th>ID Number</th>
+                                    <th>Age</th>
+                                    <th>Gender</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var patient in Model)
+                                {
+                                    <tr>
+                                        <td>@patient.FullName</td>
+                                        <td>@patient.IdNumber</td>
+                                        @{
+                                            int calculatedAge = 0;
+                                            if (!string.IsNullOrEmpty(patient.IdNumber) && patient.IdNumber.Length >= 6)
+                                            {
+                                                var yearPart = int.Parse(patient.IdNumber.Substring(0, 2));
+                                                var monthPart = int.Parse(patient.IdNumber.Substring(2, 2));
+                                                var dayPart = int.Parse(patient.IdNumber.Substring(4, 2));
+
+                                                var currentYear = DateTime.Now.Year % 100;
+                                                var century = (yearPart <= currentYear) ? 2000 : 1900;
+
+                                                var birthDate = new DateTime(century + yearPart, monthPart, dayPart);
+                                                calculatedAge = DateTime.Today.Year - birthDate.Year;
+                                                if (birthDate.Date > DateTime.Today.AddYears(-calculatedAge)) calculatedAge--;
+                                            }
+                                        }
+                                        <td>@calculatedAge</td>
+
+                                        <td>@patient.Gender</td>
+                                        <td>
+                                            <a asp-action="Prescribe" asp-controller="Doctor" asp-route-id="@patient.AppointmentId" class="btn btn-sm btn-primary">
+                                                <i class="bi bi-plus-circle"></i> Prescribe
+                                            </a>
+                                        </td>
+
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+        <!-- Back Button -->
+        <div class="text-center mt-4">
+            <a asp-action="Index" asp-controller="Doctor" class="btn btn-secondary px-4">
+                <i class="bi bi-arrow-left-circle me-1"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+@section Scripts{
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+         //Live Searching
+        document.getElementById("searchInput").addEventListener("keyup", function () {
+        const searchValue = this.value.toLowerCase();
+        const rows = document.querySelectorAll("#MyPatientsTable tbody tr");
+
+         rows.forEach(row => {
+        const rowText = row.innerText.toLowerCase();
+        row.style.display = rowText.includes(searchValue) ? "" : "none";
+        });
+        });
+
+          document.addEventListener("DOMContentLoaded", function () {
+            var toastEl = document.getElementById("toastMessage");
+            if (toastEl) {
+                var toast = new bootstrap.Toast(toastEl);
+                toast.show();
+            }
+        });
+    </script>
+}
+

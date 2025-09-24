@@ -1,0 +1,54 @@
+﻿@using Microsoft.AspNetCore.Identity;
+@inject SignInManager<Users> signInManager;
+@inject UserManager<Users> userManager
+
+
+<ul class="navbar-nav ms-auto align-items-center">
+	@if (signInManager.IsSignedIn(User))
+    {
+		string userRole = "";
+		var currentUser = await userManager.GetUserAsync(User);
+        var roles = await userManager.GetRolesAsync(currentUser);
+        userRole = roles.FirstOrDefault() ?? "No Role";
+
+		<li class="nav-item d-flex align-items-center gap-3">
+		  
+			@{
+				string roleIcon = userRole switch
+				{
+					"WardAdmin" => "bi-hospital",
+					"Doctor" => "bi-person-lines-fill",
+					"Nurse" => "bi-clipboard-pulse",
+					"Sister" => "bi-clipboard-pulse",
+					"Admin" => "bi-shield-lock",
+					_ => "bi-person-badge"
+				};
+             }
+
+			<span class="text-muted ">
+			  	<i class="bi @roleIcon me-1"></i> Logged in as <strong>@userRole</strong>
+			</span>
+
+			<form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+				@Html.AntiForgeryToken()
+				<button type="submit" class="btn btn-outline-danger d-flex align-items-center gap-2">
+					<i class="bi bi-box-arrow-right"></i> Logout
+				</button>
+			</form>
+		</li>
+
+	}
+	else
+	{
+		<li class="nav-item">
+			<a class="btn btn-outline-primary me-2 d-flex align-items-center gap-2" asp-controller="Account" asp-action="Login">
+				<i class="bi bi-box-arrow-in-right"></i> Login
+			</a>
+		</li>
+		<li class="nav-item">
+			<a class="btn btn-primary d-flex align-items-center gap-2" asp-controller="Account" asp-action="Register">
+				<i class="bi bi-person-plus-fill"></i> Register
+			</a>
+		</li>
+	}
+</ul>

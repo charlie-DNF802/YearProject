@@ -1,0 +1,123 @@
+﻿@model IEnumerable<Ward_Management_System.Models.Prescription>
+@{
+    ViewData["Title"] = "Pending Prescriptions";
+    Layout = "~/Views/Shared/_UserLayout.cshtml";
+}
+@if (TempData["ToastMessage"] != null)
+{
+    var toastType = TempData["ToastType"] ?? "success";
+    <div aria-live="polite" aria-atomic="true" class="position-relative">
+        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080;">
+            <div id="toastMessage" class="toast align-items-center text-bg-@toastType border-0 shadow" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        @TempData["ToastMessage"]
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="container-fluid patient-dashboard py-5">
+    <div class="row justify-content-center mb-4 ">
+        <div class="col-md-10 text-center">
+            <h2 class="mb-4 text-primary fw-bold">Pending Prescriptions</h2>
+            <p>View and administer a patients medications</p>
+        </div>
+    </div>
+
+    @* Live Searching  *@
+    <div class="row mb-4">
+        <div class="col-md-6 offset-md-3">
+            <input type="text" id="searchInput" class="form-control shadow-sm" placeholder="Search by PatientName ,IdNumber ,Doctor...">
+        </div>
+    </div>
+
+
+<div class="row">
+    <div class="col-md-10 offset-md-1">
+        <div class="card shadow-sm">
+            @if (!Model.Any())
+            {
+                <div class="alert alert-info shadow-sm rounded-3">
+                    No pending prescriptions at the moment.
+                </div>
+            }
+            else
+            {
+                    <div class="card-body">
+                        <table class="table table-hover table-striped mb-0 align-middle" id="PrescriptionTable">
+                            <thead class="table-primary">
+                                <tr>
+                                    <th>Patient</th>
+                                    <th>ID Number</th>
+                                    <th>Doctor</th>
+                                    <th>Date</th>
+                                    <th>Items</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var p in Model)
+                                {
+                                    var status = p.Medications.All(m => m.IsDispensed) ? "Completed" : "Pending";
+                                    <tr>
+                                        <td class="fw-semibold">@p.Appointment.FullName</td>
+                                        <td>@p.Appointment.IdNumber</td>
+                                        <td>@p.PrescribedBy?.FullName</td>
+                                        <td>@p.PrescribedDate.ToString("yyyy-MM-dd")</td>
+                                        <td>@p.Medications.Count(m => !m.IsDispensed)</td>
+                                        <td>
+                                            @if (status == "Completed")
+                                            {
+                                                <span class="badge bg-success">Completed</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-warning text-dark">Pending</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <a asp-action="AdministerMedication"
+                                               asp-route-prescriptionId="@p.PrescriptionId"
+                                               class="btn btn-sm btn-outline-primary shadow-sm">
+                                                <i class="bi bi-capsule"></i> View & Administer
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+            }
+        </div>
+    </div>
+        <!-- Back Button -->
+        <div class="text-center mt-4">
+            <a asp-action="Index" asp-controller="Nurse" class="btn btn-secondary px-4">
+                <i class="bi bi-arrow-left-circle me-1"></i> Back to Dashboard
+            </a>
+        </div>
+</div>
+</div>
+@section Scripts{
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+         //Live Searching
+        document.getElementById("searchInput").addEventListener("keyup", function () {
+        const searchValue = this.value.toLowerCase();
+        const rows = document.querySelectorAll("#PrescriptionTable tbody tr");
+
+        rows.forEach(row => {
+        const rowText = row.innerText.toLowerCase();
+        row.style.display = rowText.includes(searchValue) ? "" : "none";
+        });
+        });
+    </script>
+}
+
+
+

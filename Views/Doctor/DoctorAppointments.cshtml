@@ -1,0 +1,256 @@
+﻿@model IEnumerable<Appointment>
+@{
+    ViewData["Title"] = "My Appointments";
+    Layout = "~/Views/Shared/_UserLayout.cshtml";
+}
+@functions {
+    public int CalculateAgeFromId(string idNumber)
+    {
+        if (string.IsNullOrEmpty(idNumber) || idNumber.Length < 6)
+            return 0;
+
+        try
+        {
+            var yearPart = int.Parse(idNumber.Substring(0, 2));
+            var monthPart = int.Parse(idNumber.Substring(2, 2));
+            var dayPart = int.Parse(idNumber.Substring(4, 2));
+
+            var currentYear = DateTime.Now.Year % 100;
+            var century = (yearPart <= currentYear) ? 2000 : 1900;
+
+            if (monthPart < 1 || monthPart > 12)
+                return 0;
+
+            if (dayPart < 1 || dayPart > DateTime.DaysInMonth(century + yearPart, monthPart))
+                return 0;
+
+            var birthDate = new DateTime(century + yearPart, monthPart, dayPart);
+
+            var age = DateTime.Today.Year - birthDate.Year;
+            if (birthDate.Date > DateTime.Today.AddYears(-age))
+                age--;
+
+            return age;
+        }
+        catch
+        {
+            return 0; 
+        }
+    }
+}
+@if (TempData["ToastMessage"] != null)
+{
+    var toastType = TempData["ToastType"] ?? "success";
+    <div aria-live="polite" aria-atomic="true" class="position-relative">
+        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080;">
+            <div id="toastMessage" class="toast align-items-center text-bg-@toastType border-0 shadow" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        @TempData["ToastMessage"]
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="container-fluid patient-dashboard py-5">
+    <div class="row justify-content-center mb-4 ">
+        <div class="col-md-10 text-center">
+            <h2 class="fw-bold text-primary">My Appointments</h2>
+            <p>View List Of upcoming appointment and make reschedules</p>
+        </div>
+    </div>
+
+    <!-- Filtering options -->
+    <div class="row justify-content-center mb-4">
+        <!-- Date Filter -->
+        <div class="col-md-2">
+            <input type="date" class="form-control" id="dateFilter"/>
+        </div>
+
+        <!-- Gender Filter -->
+        <div class="col-md-2">
+            <select class="form-select" id="genderFilter">
+                <option value="">All Genders</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+            </select>
+        </div>
+
+        <!-- Age Group Filter -->
+        <div class="col-md-2">
+            <select class="form-select" id="ageFilter">
+                <option value="">All Age Groups</option>
+                <option value="young">Under 30</option>
+                <option value="middle">30-50</option>
+                <option value="senior">50+</option>
+            </select>
+        </div>
+
+        <!-- Search Input -->
+        <div class="col-md-4">
+            <div class="input-group">
+                <span class="input-group-text bg-white">
+                    <i class="bi bi-search text-muted"></i>
+                </span>
+                <input type="text" class="form-control" id="patientSearch" placeholder="Search for a patient...">
+                <button class="btn btn-outline-secondary" type="button" id="clearFilters">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-10 offset-md-1">
+            <div class="card shadow-sm">
+                @if (!Model.Any())
+                {
+                    <div class="alert alert-info">You have no scheduled appointments.</div>
+                }
+                else
+                {
+                    <div class="card-body">
+                        <table class="table table-striped table-hover align-middle" id="patientTable">
+                            <thead class="table-success">
+                                <tr>
+                                    <th>Patient Name</th>
+                                    <th>Age</th>
+                                    <th>Gender</th>
+                                    <th>ID Number</th>
+                                    <th>Date</th>
+                                    <th>Time</th>
+                                    <th>Reason</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var appt in Model)
+                                {
+                                    <tr>
+                                        <td>@appt.FullName</td>
+                                        <td>@CalculateAgeFromId(appt.IdNumber)</td>
+                                        <td>@appt.Gender</td>
+                                        <td>@appt.IdNumber</td>
+                                        <td>@appt.PreferredDate.ToString("yyyy-MM-dd")</td>
+                                        <td>@appt.PreferredTime.ToString(@"hh\:mm")</td>
+                                        <td>@appt.Reason</td>
+                                        <td>
+                                            @if (appt.Status == "Completed")
+                                            {
+                                                <span class="badge bg-success">Completed</span>
+                                            }
+                                            else if (appt.Status == "Pending")
+                                            {
+                                                <span class="badge bg-warning text-dark">Pending</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">@appt.Status</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <form asp-controller="Doctor"
+                                                  asp-action="ScheduleFollowUp"
+                                                  method="get"
+                                                  class="d-inline">
+                                                <input type="hidden" name="appointmentId" value="@appt.AppointmentId" />
+                                                <button type="submit" class="btn btn-outline-success btn-sm">
+                                                    Follow-Up
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+        <!-- Back Button -->
+        <div class="text-center mt-4">
+            <a asp-action="Index" asp-controller="Doctor" class="btn btn-secondary px-4">
+                <i class="bi bi-arrow-left-circle me-1"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+@section Scripts{
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+          document.addEventListener("DOMContentLoaded", function () {
+            var toastEl = document.getElementById("toastMessage");
+            if (toastEl) {
+                var toast = new bootstrap.Toast(toastEl);
+                toast.show();
+            }
+        });
+    </script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const dateFilter = document.getElementById('dateFilter');
+            const genderFilter = document.getElementById('genderFilter');
+            const ageFilter = document.getElementById('ageFilter');
+            const patientSearch = document.getElementById('patientSearch');
+            const clearFilters = document.getElementById('clearFilters');
+            const rows = document.querySelectorAll("#patientTable tbody tr");
+
+            function applyFilters() {
+                const dateValue = dateFilter.value;
+                const genderValue = genderFilter.value.toLowerCase();
+                const ageValue = ageFilter.value;
+                const searchValue = patientSearch.value.toLowerCase();
+
+                rows.forEach(row => {
+                    const age = parseInt(row.querySelector('td:nth-child(2)').textContent);
+                    const gender = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
+                    const date = row.querySelector('td:nth-child(5)').textContent.toLowerCase();
+                    const rowText = row.innerText.toLowerCase();
+
+                    // Age filter logic
+                    let ageMatch = true;
+                    if (ageValue === 'young') ageMatch = age < 30;
+                    else if (ageValue === 'middle') ageMatch = age >= 30 && age <= 50;
+                    else if (ageValue === 'senior') ageMatch = age > 50;
+
+                    // Date must match selected date exactly
+                    const dateMatch = !dateValue || date === dateValue;
+
+                    // Gender filter
+                    const genderMatch = !genderValue || gender === genderValue;
+
+                    // Search input
+                    const searchMatch = !searchValue || rowText.includes(searchValue);
+
+                    const showRow = ageMatch && dateMatch && genderMatch && searchMatch;
+                    row.style.display = showRow ? '' : 'none';
+                });
+            }
+
+            // Trigger filtering
+            [dateFilter, genderFilter, ageFilter].forEach(f => {
+                f.addEventListener('change', applyFilters);
+            });
+            patientSearch.addEventListener('input', applyFilters);
+
+            clearFilters.addEventListener('click', function () {
+                dateFilter.value = '';
+                genderFilter.value = '';
+                ageFilter.value = '';
+                patientSearch.value = '';
+                applyFilters();
+            });
+
+            // Apply filters on load (optional)
+            applyFilters();
+        });
+    </script>
+}
+

@@ -1,0 +1,100 @@
+﻿@model IEnumerable<Ward_Management_System.Models.Appointment>
+@{
+    ViewData["Title"] = "Discharge List";
+    Layout = "~/Views/Shared/_UserLayout.cshtml";
+}
+
+@if (TempData["ToastMessage"] != null)
+{
+    var toastType = TempData["ToastType"] ?? "success";
+    <div aria-live="polite" aria-atomic="true" class="position-relative">
+        <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1080;">
+            <div id="toastMessage" class="toast align-items-center text-bg-@toastType border-0 shadow" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        @TempData["ToastMessage"]
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="container-fluid patient-dashboard py-5">
+    <div class="row justify-content-center mb-4">
+        <div class="col-md-10 text-center">
+            <h2 class="fw-bold text-primary">Discharge Ready List</h2>
+            <p class="text-muted">Discharge patients that ready.</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="card shadow-sm">
+            @if (!Model.Any())
+            {
+                <div class="alert alert-info text-center col-md-8 mx-auto shadow-sm">
+                    No patients are ready to be discharged at the moment.
+                </div>
+
+            }
+            else
+            {
+                <div class="card-body"> 
+                    <table class="table table-hover align-middle" id="dischargeTable">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>#</th>
+                                <th>Patient Name</th>
+                                <th>Id Number</th>
+                                <th>Gender</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{
+                                int count = 1;
+                            }
+                            @foreach(var appointment in Model)
+                            {
+                                <tr>
+                                    <td>@count</td>
+                                    <td>@appointment.FullName</td>
+                                    <td>@appointment.IdNumber</td>
+                                    <td>@appointment.Gender</td>
+                                    <td>@appointment.Status</td>
+                                    <td>
+                                        <form asp-action="Discharge" asp-controller="WardAdmin" method="post">
+                                            <input type="hidden" name="appointmentId" value="@appointment.AppointmentId" />
+                                            <button type="submit" class="btn btn-success btn-sm">Discharge</button>
+                                        </form>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+         <!-- Back Button -->
+        <div class="text-center mt-4">
+            <a asp-action="Index" asp-controller="WardAdmin" class="btn btn-secondary px-4">
+                <i class="bi bi-arrow-left-circle me-1"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+@section Scripts {
+     @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+     }
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var toastEl = document.getElementById("toastMessage");
+            if (toastEl) {
+                var toast = new bootstrap.Toast(toastEl);
+                toast.show();
+            }
+        });
+    </script>
+}
