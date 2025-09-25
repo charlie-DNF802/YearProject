@@ -292,7 +292,7 @@ namespace Ward_Management_System.Controllers
             if (model.BookingFor == "Self")
             {
                 appointment.FullName = user.FullName;
-                appointment.Age = user.Age;
+                appointment.Age = model.Age;
                 appointment.Gender = user.Gender;
                 appointment.IdNumber = user.IdNumber;
             }

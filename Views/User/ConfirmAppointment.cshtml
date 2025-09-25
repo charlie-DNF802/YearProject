@@ -70,7 +70,9 @@
                                 <div class="col-md-3 mb-3">
                                     <label class="form-label">Age</label>
                                     <input class="form-control" value="@calculatedAge" readonly />
+                                    <input type="hidden" asp-for="Age" value="@calculatedAge" />
                                 </div>
+
                                 <div class="col-md-3 mb-3">
                                     <label class="form-label">Gender</label>
                                     <input class="form-control" value="@user?.Gender" readonly />
@@ -78,7 +80,7 @@
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">ID Number</label>
-                                <input class="form-control" value="@user?.IdNumber" readonly />
+                                <input class="form-control" value="@user?.IdNumber" readonly id="IdNumber"/>
                             </div>
                         </div>
 
@@ -91,7 +93,7 @@
                                 </div>
                                 <div class="col-md-3 mb-3">
                                     <label class="form-label">Age</label>
-                                    <input asp-for="OtherPersonAge" class="form-control" type="number" min="0" />
+                                    <input asp-for="OtherPersonAge" class="form-control" type="number" min="0" id="Age"/>
                                 </div>
                                 <div class="col-md-3 mb-3">
                                     <label asp-for="OtherPersonGender" class="form-label">Gender</label>
@@ -105,7 +107,7 @@
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">ID Number</label>
-                                <input asp-for="OtherPersonIdNumber" class="form-control" />
+                                <input asp-for="OtherPersonIdNumber" class="form-control" id="OtherPersonIdNumber" />
                             </div>
                         </div>
 
@@ -151,6 +153,41 @@
                 selfInfo.forEach(el => el.classList.add("d-none"));
                 otherInfo.forEach(el => el.classList.add("d-none"));
             }
+        });
+
+         
+    </script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var idInput = document.getElementById("IdNumber");
+            var ageInput = document.getElementById("Age");
+
+            idInput.addEventListener("input", function () {
+                var id = idInput.value;
+
+                if (id.length === 13) {
+                    var year = parseInt(id.substring(0, 2), 10);
+                    var month = parseInt(id.substring(2, 4), 10) - 1; // JS months are 0-11
+                    var day = parseInt(id.substring(4, 6), 10);
+
+                    // Determine century (assuming IDs for people born 1900-2099)
+                    var currentYear = new Date().getFullYear() % 100;
+                    var century = (year <= currentYear) ? 2000 : 1900;
+                    year += century;
+
+                    var birthDate = new Date(year, month, day);
+                    var age = new Date().getFullYear() - birthDate.getFullYear();
+                    var m = new Date().getMonth() - birthDate.getMonth();
+
+                    if (m < 0 || (m === 0 && new Date().getDate() < birthDate.getDate())) {
+                        age--;
+                    }
+
+                    ageInput.value = age;
+                } else {
+                    ageInput.value = "";
+                }
+            });
         });
     </script>
 }

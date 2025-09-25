@@ -539,14 +539,16 @@ namespace Ward_Management_System.Controllers
                 return Unauthorized();
 
             var allowedStatuses = new[] { "Pending", "CheckedIn", "Scheduled" };
+            var today = DateTime.Today;
 
             var appointments = await _context.Appointments
-                .Where(a => a.DoctorId == doctor.Id && allowedStatuses.Contains(a.Status))
+                .Where(a => a.DoctorId == doctor.Id && allowedStatuses.Contains(a.Status) && a.PreferredDate >= today)
                 .Include(a => a.User)
                 .Include(a => a.ConsultationRoom)
                 .OrderBy(a => a.PreferredDate)
                 .ThenBy(a => a.PreferredTime)
                 .ToListAsync();
+
 
             return View(appointments);
         }
