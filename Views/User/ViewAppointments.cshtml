@@ -86,12 +86,6 @@
                                         <td>@appointment.Doctor?.FullName</td>
                                         <td>
                                             <div class="d-flex justify-content-center gap-2">
-                                                <!-- Reschedule Button -->
-                                                <a asp-action="Reschedule" asp-route-id="@appointment.AppointmentId"
-                                                   class="btn btn-sm btn-outline-primary">
-                                                    <i class="bi bi-calendar-event me-1"></i> Reschedule
-                                                </a>
-
                                                 <!-- Cancel Button -->
                                                 <form asp-action="Cancel" asp-route-id="@appointment.AppointmentId" method="post" onsubmit="return confirm('Are you sure you want to cancel this appointment?');">
                                                     <button type="submit" class="btn btn-sm btn-outline-danger">
