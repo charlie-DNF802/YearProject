@@ -6,18 +6,23 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Ward_Management_System.Data;
 using Ward_Management_System.Models;
+using Ward_Management_System.ViewModels;
 
 namespace Ward_Management_System.Controllers
 {
     public class ReportsController : Controller
     {
         private readonly AppDbContext _context;
-        public ReportsController(AppDbContext context)
+        private readonly UserManager<Users> _userManager;
+        private readonly IWebHostEnvironment _env;
+        public ReportsController(AppDbContext context, IWebHostEnvironment env, UserManager<Users> userManager)
         {
             _context = context;
+            _env = env;
+            _userManager = userManager;
         }
 
-        // Export to PDF
+        // Export to MedicationSummaryPDF
         public async Task<IActionResult> ExportMedicationSummaryToPdf()
         {
             // Query summary with total
@@ -114,6 +119,161 @@ namespace Ward_Management_System.Controllers
                 return File(stream.ToArray(), "application/pdf", "MedicationSummary.pdf");
             }
         }
+
+        //Export RegisteredUsersPDF
+        public IActionResult ExportUsersPdf(DateTime? startDate, DateTime? endDate, string gender, string ageGroup, string search)
+        {
+            // 1. Get filtered users
+            var users = GetFilteredUsers(startDate, endDate, gender, ageGroup, search);
+
+            using var ms = new MemoryStream();
+            var doc = new Document(PageSize.A4, 25, 25, 30, 30);
+            var writer = PdfWriter.GetInstance(doc, ms);
+
+            doc.Open();
+
+            // 2. Add logo
+            var logoPath = Path.Combine(_env.WebRootPath, "images", "logo.png");
+            if (System.IO.File.Exists(logoPath))
+            {
+                var logo = Image.GetInstance(logoPath);
+                logo.ScaleAbsolute(120f, 60f);
+                logo.Alignment = Element.ALIGN_LEFT;
+                doc.Add(logo);
+            }
+
+            // 3. Add title
+            var titleFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 16);
+            var title = new Paragraph("Registered Users List", titleFont)
+            {
+                Alignment = Element.ALIGN_CENTER,
+                SpacingAfter = 20f
+            };
+            doc.Add(title);
+
+            // 4. Create table for users
+            var table = new PdfPTable(8) { WidthPercentage = 100 };
+            table.SetWidths(new float[] { 3f, 10f, 12f, 3f, 12f, 8f, 8f, 4f });
+
+            var headerFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 10);
+            string[] headers = { "#", "Full Name", "Email", "Age", "Address", "Phone", "ID Number", "Gender" };
+            foreach (var header in headers)
+            {
+                var cell = new PdfPCell(new Phrase(header, headerFont)) { BackgroundColor = BaseColor.LightGray };
+                table.AddCell(cell);
+            }
+
+            var rowFont = FontFactory.GetFont(FontFactory.HELVETICA, 10);
+            int count = 1;
+            foreach (var u in users)
+            {
+                table.AddCell(new PdfPCell(new Phrase(count.ToString(), rowFont)));
+                table.AddCell(new PdfPCell(new Phrase(u.FullName, rowFont)));
+                table.AddCell(new PdfPCell(new Phrase(u.Email, rowFont)));
+                table.AddCell(new PdfPCell(new Phrase(u.Age.ToString(), rowFont)));
+                table.AddCell(new PdfPCell(new Phrase(u.Address, rowFont)));
+                table.AddCell(new PdfPCell(new Phrase(u.PhoneNumber, rowFont)));
+                table.AddCell(new PdfPCell(new Phrase(u.IdNumber, rowFont)));
+                table.AddCell(new PdfPCell(new Phrase(u.Gender, rowFont)));
+                count++;
+            }
+
+            doc.Add(table);
+
+            // 5. Add statistics
+            doc.Add(new Paragraph("\nUser Statistics:", titleFont));
+
+            int totalUsers = users.Count;
+            int maleCount = users.Count(u => u.Gender == "Male");
+            int femaleCount = users.Count(u => u.Gender == "Female");
+            int young = users.Count(u => u.Age < 30);
+            int middle = users.Count(u => u.Age >= 30 && u.Age < 50);
+            int senior = users.Count(u => u.Age >= 50);
+
+            var statsFont = FontFactory.GetFont(FontFactory.HELVETICA, 10);
+            doc.Add(new Paragraph($"Total Users: {totalUsers}", statsFont));
+            doc.Add(new Paragraph($"Male: {maleCount}, Female: {femaleCount}", statsFont));
+            doc.Add(new Paragraph($"Age Distribution: 18-29: {young}, 30-49: {middle}, 50+: {senior}", statsFont));
+
+            doc.Close();
+
+            return File(ms.ToArray(), "application/pdf", "RegisteredUsers.pdf");
+        }
+
+        private List<StaffListViewModel> GetFilteredUsers(DateTime? startDate, DateTime? endDate, string gender, string ageGroup, string search)
+        {
+            // Get all active users
+            var activeUsers = _userManager.Users
+                .Where(u => u.IsActive)
+                .ToList();
+
+            var staffList = new List<StaffListViewModel>();
+
+            foreach (var user in activeUsers)
+            {
+                var roles = _userManager.GetRolesAsync(user).Result; // synchronous call inside method
+                if (roles.Count == 1 && roles.Contains("User")) // Only registered users
+                {
+                    staffList.Add(new StaffListViewModel
+                    {
+                        Id = user.Id,
+                        FullName = user.FullName,
+                        Email = user.Email,
+                        Roles = string.Join(", ", roles),
+                        Age = user.Age,
+                        Address = user.Address,
+                        PhoneNumber = user.PhoneNumber,
+                        IdNumber = user.IdNumber,
+                        Gender = user.Gender,
+                        DateAdded = user.DateAdded
+                    });
+                }
+            }
+
+            // Apply filters
+            if (startDate.HasValue && endDate.HasValue)
+            {
+                staffList = staffList
+                    .Where(s => s.DateAdded.Date >= startDate.Value.Date && s.DateAdded.Date <= endDate.Value.Date)
+                    .ToList();
+            }
+
+            if (!string.IsNullOrWhiteSpace(gender))
+            {
+                staffList = staffList
+                    .Where(s => s.Gender.Equals(gender, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+
+            if (!string.IsNullOrWhiteSpace(ageGroup))
+            {
+                staffList = staffList.Where(s => ageGroup switch
+                {
+                    "young" => s.Age < 30,
+                    "middle" => s.Age >= 30 && s.Age <= 50,
+                    "senior" => s.Age > 50,
+                    _ => true
+                }).ToList();
+            }
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                search = search.ToLower();
+                staffList = staffList
+                    .Where(s => s.FullName.ToLower().Contains(search)
+                             || s.Email.ToLower().Contains(search)
+                             || s.Roles.ToLower().Contains(search)
+                             || s.Address.ToLower().Contains(search)
+                             || s.PhoneNumber.ToLower().Contains(search)
+                             || s.IdNumber.ToLower().Contains(search)
+                             || s.Gender.ToLower().Contains(search))
+                    .ToList();
+            }
+
+            return staffList;
+        }
+
+
 
     }
 }

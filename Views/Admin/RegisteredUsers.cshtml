@@ -48,8 +48,12 @@
 
     <!-- Filtering form -->
     <form method="get" asp-controller="Admin" asp-action="RegisteredUsers" class="d-flex align-items-center mb-4 flex-wrap gap-3 w-100">
+        <!-- Date Range Filter -->
+        <input type="date" name="startDate" class="form-control" value="@(ViewBag.CurrentStartDate ?? "")" style="width: 180px;" />
+        <input type="date" name="endDate" class="form-control" value="@(ViewBag.CurrentEndDate ?? "")" style="width: 180px;" />
+
         <!-- Gender Filter -->
-        <select class="form-select" name="gender" style="width: 400px;">
+        <select class="form-select" name="gender" style="width: 200px;">
             <option value="">All Genders</option>
             <option value="Male" selected="@(ViewBag.CurrentGender == "Male" ? "selected" : null)">Male</option>
             <option value="Female" selected="@(ViewBag.CurrentGender == "Female" ? "selected" : null)">Female</option>
@@ -57,97 +61,140 @@
         </select>
 
         <!-- Age Group Filter -->
-        <select class="form-select" name="ageGroup" style="width: 400px;">
+        <select class="form-select" name="ageGroup" style="width: 200px;">
             <option value="">All Age Groups</option>
             <option value="young" selected="@(ViewBag.CurrentAgeGroup == "young" ? "selected" : null)">Under 30</option>
             <option value="middle" selected="@(ViewBag.CurrentAgeGroup == "middle" ? "selected" : null)">30-50</option>
             <option value="senior" selected="@(ViewBag.CurrentAgeGroup == "senior" ? "selected" : null)">50+</option>
         </select>
 
-        <!-- Search Input + Buttons -->
+        <!-- Search Input + Filter/Clear Buttons -->
         <div class="input-group" style="flex: 1; min-width: 300px;">
             <input type="text" name="search" value="@(ViewBag.CurrentSearch ?? "")" class="form-control" placeholder="Search user..." />
             <button type="submit" class="btn btn-primary">Filter</button>
             <a class="btn btn-outline-secondary" asp-controller="Admin" asp-action="RegisteredUsers">Clear</a>
         </div>
+
+        <!-- Export PDF Button (aligned with filters) -->
+        <a asp-controller="Reports" asp-action="ExportUsersPdf"
+           asp-route-startDate="@ViewBag.CurrentStartDate"
+           asp-route-endDate="@ViewBag.CurrentEndDate"
+           asp-route-gender="@ViewBag.CurrentGender"
+           asp-route-ageGroup="@ViewBag.CurrentAgeGroup"
+           asp-route-search="@ViewBag.CurrentSearch"
+           class="btn btn-success">
+            <i class="bi bi-file-earmark-pdf"></i> Export PDF
+        </a>
     </form>
+
 
     <!-- Stats & Table -->
     <div class="row">
         <!-- Table -->
         <div class="col-lg-8 mb-4">
             <div class="card shadow-sm">
-                <div class="card-body">
-                    <table class="table table-hover align-middle" id="RegisteredUsersTable">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>#</th>
-                                <th>Full Name</th>
-                                <th>Email</th>
-                                <th>Age</th>
-                                <th>Address</th>
-                                <th>Phone Number</th>
-                                <th>ID Number</th>
-                                <th>Gender</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @{
-                                int count = 1;
-                            }
-                            @foreach (var staff in Model)
-                            {
-                                <tr>
-                                    <td>@count</td>
-                                    <td>@staff.FullName</td>
-                                    <td>@staff.Email</td>
-                                    <td>@staff.Age</td>
-                                    <td>@staff.Address</td>
-                                    <td>@staff.PhoneNumber</td>
-                                    <td>@staff.IdNumber</td>
-                                    <td>@staff.Gender</td>
-                                </tr>
-                                count++;
-                            }
-                        </tbody>
-                    </table>
-                    @*  Paging shared partial view *@
-                    <div class="=container">
-                        @if (pager.TotalPages > 0)
-                        {
-                            <ul class="pagination justify-content-end">
-                                @if (pager.CurrentPage > 1)
-                                {
-                                    <li class="page-item">
-                                        <a class="page-link" asp-controller="Admin" asp-action="RegisteredUsers" asp-route-pg="1">First</a>
-                                    </li>
-                                    <li class="page-item">
-                                        <a class="page-link" asp-controller="Admin" asp-action="RegisteredUsers" asp-route-pg="@(pager.CurrentPage - 1)">Previous</a>
-                                    </li>
-                                }
-                                @for (var pge = pager.StartPage; pge <= pager.EndPage; pge++)
-                                {
-                                    <li class="page-item @(pge == pager.CurrentPage ? "active" : "")">
-                                        <a class="page-link" asp-controller="Admin" asp-action="RegisteredUsers" asp-route-pg="@pge">@pge</a>
-                                    </li>
-                                }
-                                @if (pager.CurrentPage < pager.TotalPages)
-                                {
-                                    <li class="page-item">
-                                        <a class="page-link" asp-controller="Admin" asp-action="RegisteredUsers" asp-route-pg="@(pager.CurrentPage + 1)">Next</a>
-                                    </li>
-                                    <li>
-                                        <a class="page-link" asp-controller="Admin" asp-action="RegisteredUsers" asp-route-pg="@(pager.TotalPages)">Last</a>
-                                    </li>
-                                }
-                            </ul>
-                        }
+                @if (!Model.Any())
+                {
+                    <div class="alert alert-info text-center">
+                        No Users Available
                     </div>
-                </div>
+                }
+                else
+                {
+                    <div class="card-body">
+                        <table class="table table-hover align-middle" id="RegisteredUsersTable">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Full Name</th>
+                                    <th>Email</th>
+                                    <th>Age</th>
+                                    <th>Address</th>
+                                    <th>Phone Number</th>
+                                    <th>ID Number</th>
+                                    <th>Gender</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @{
+                                    int count = ((pager.CurrentPage - 1) * pager.PageSize) + 1;
+                                }
+                                @foreach (var staff in Model)
+                                {
+                                    <tr>
+                                        <td>@count</td>
+                                        <td>@staff.FullName</td>
+                                        <td>@staff.Email</td>
+                                        <td>@staff.Age</td>
+                                        <td>@staff.Address</td>
+                                        <td>@staff.PhoneNumber</td>
+                                        <td>@staff.IdNumber</td>
+                                        <td>@staff.Gender</td>
+                                    </tr>
+                                    count++;
+                                }
+                            </tbody>
+                        </table>
+                        @*  Paging shared partial view *@
+                        <div class="=container">
+                            @if (pager.TotalPages > 0)
+                            {
+                                <ul class="pagination justify-content-end">
+                                    @if (pager.CurrentPage > 1)
+                                    {
+                                        <li class="page-item">
+                                            <a class="page-link" asp-controller="Admin" asp-action="RegisteredUsers" asp-route-pg="1">First</a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" asp-controller="Admin" asp-action="RegisteredUsers" asp-route-pg="@(pager.CurrentPage - 1)">Previous</a>
+                                        </li>
+                                    }
+                                    @for (var pge = pager.StartPage; pge <= pager.EndPage; pge++)
+                                    {
+                                        <li class="page-item @(pge == pager.CurrentPage ? "active" : "")">
+                                            <a class="page-link" asp-controller="Admin" asp-action="RegisteredUsers" asp-route-pg="@pge">@pge</a>
+                                        </li>
+                                    }
+                                    @if (pager.CurrentPage < pager.TotalPages)
+                                    {
+                                        <li class="page-item">
+                                            <a class="page-link" asp-controller="Admin" asp-action="RegisteredUsers" asp-route-pg="@(pager.CurrentPage + 1)">Next</a>
+                                        </li>
+                                        <li>
+                                            <a class="page-link" asp-controller="Admin" asp-action="RegisteredUsers" asp-route-pg="@(pager.TotalPages)">Last</a>
+                                        </li>
+                                    }
+                                </ul>
+                            }
+                        </div>
+                    </div>
+                }
+                
             </div>
         </div>
         
         <!-- Stats Panel -->
+        @{
+            var allUsersForStats = ViewBag.AllUsersForStats as List<Ward_Management_System.ViewModels.StaffListViewModel> ?? new();
+
+            int totalUsers = allUsersForStats.Count;
+            int young = allUsersForStats.Count(u => u.Age < 30);
+            int middle = allUsersForStats.Count(u => u.Age >= 30 && u.Age < 50);
+            int senior = allUsersForStats.Count(u => u.Age >= 50);
+
+            int youngPercent = totalUsers > 0 ? young * 100 / totalUsers : 0;
+            int middlePercent = totalUsers > 0 ? middle * 100 / totalUsers : 0;
+            int seniorPercent = totalUsers > 0 ? senior * 100 / totalUsers : 0;
+
+            int maleCount = allUsersForStats.Count(u => u.Gender == "Male");
+            int femaleCount = allUsersForStats.Count(u => u.Gender == "Female");
+
+            var recentRegistrations = allUsersForStats
+            .OrderByDescending(u => u.DateAdded)
+            .Take(3)
+            .ToList();
+        }
+
         <div class="col-lg-4 mb-4">
             <div class="card shadow-sm">
                 <div class="card-body">
@@ -162,7 +209,7 @@
                                 </div>
                                 <div>
                                     <h6 class="mb-0">Total Users</h6>
-                                    <p class="fs-3 mb-0">@Model.Count()</p>
+                                    <p class="fs-3 mb-0">@totalUsers</p>
                                 </div>
                             </div>
                         </div>
@@ -177,8 +224,8 @@
                                 <div>
                                     <h6 class="mb-0">Gender Ratio</h6>
                                     <p class="mb-0">
-                                        Male: @Model.Count(u => u.Gender == "Male")<br>
-                                        Female: @Model.Count(u => u.Gender == "Female")
+                                        Male: @maleCount<br>
+                                        Female: @femaleCount
                                     </p>
                                 </div>
                             </div>
@@ -190,36 +237,42 @@
                         <h6>Age Distribution</h6>
                         <div class="progress mb-1" style="height: 20px;">
                             <div class="progress-bar bg-success" role="progressbar"
-                                 style="width: @(Model.Count(u => u.Age < 30) * 100 / Model.Count())%">
+                                 style="width: @youngPercent%">
                                 18-29
                             </div>
                         </div>
                         <div class="progress mb-1" style="height: 20px;">
                             <div class="progress-bar bg-warning" role="progressbar"
-                                 style="width: @(Model.Count(u => u.Age >= 30 && u.Age < 50) * 100 / Model.Count())%">
+                                 style="width: @middlePercent%">
                                 30-49
                             </div>
                         </div>
                         <div class="progress" style="height: 20px;">
                             <div class="progress-bar bg-danger" role="progressbar"
-                                 style="width: @(Model.Count(u => u.Age >= 50) * 100 / Model.Count())%">
+                                 style="width: @seniorPercent%">
                                 50+
                             </div>
                         </div>
+
                     </div>
 
                     <!-- Recent Activity -->
                     <div class="mt-4">
                         <h6>Recent Registrations</h6>
                         <ul class="list-group list-group-flush">
-                            @foreach (var recentUser in Model.OrderByDescending(u => u.DateAdded).Take(3))
+                            @foreach (var user in recentRegistrations)
                             {
                                 <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    @recentUser.FullName
+                                    <div>
+                                        <strong>@user.FullName</strong><br />
+                                        <small class="text-muted">@user.DateAdded.ToString("dd MMM yyyy")</small>
+                                    </div>
                                     <span class="badge bg-primary rounded-pill">New</span>
                                 </li>
+
                             }
                         </ul>
+
                     </div>
                 </div>
             </div>
@@ -228,49 +281,8 @@
     </div>
 
 </div>
-
 @section Scripts {
     <script>
-            // Update statistics based on visible rows
-            function updateFilteredStatistics() {
-                const visibleRows = $('#RegisteredUsersTable tbody tr:visible');
-                const totalVisible = visibleRows.length;
-
-                // Update total users count
-                $('.card-title').next().find('p.fs-3').text(totalVisible);
-
-                // Update gender ratio
-                const maleCount = visibleRows.filter(function() {
-                    return $(this).find('td:eq(7)').text() === 'Male';
-                }).length;
-
-                const femaleCount = visibleRows.filter(function() {
-                    return $(this).find('td:eq(7)').text() === 'Female';
-                }).length;
-
-                $('.card-title').next().next().find('p.mb-0').html(`Male: ${maleCount}<br>Female: ${femaleCount}`);
-
-                // Update age distribution
-                if (totalVisible > 0) {
-                    const youngCount = visibleRows.filter(function() {
-                        return parseInt($(this).find('td:eq(3)').text()) < 30;
-                    }).length;
-
-                    const middleCount = visibleRows.filter(function() {
-                        const age = parseInt($(this).find('td:eq(3)').text());
-                        return age >= 30 && age < 50;
-                    }).length;
-
-                    const seniorCount = visibleRows.filter(function() {
-                        return parseInt($(this).find('td:eq(3)').text()) >= 50;
-                    }).length;
-
-                    $('.progress-bar').eq(0).css('width', `${(youngCount / totalVisible) * 100}%`);
-                    $('.progress-bar').eq(1).css('width', `${(middleCount / totalVisible) * 100}%`);
-                    $('.progress-bar').eq(2).css('width', `${(seniorCount / totalVisible) * 100}%`);
-                }
-            }
-
             //Delete
             const deleteModal = document.getElementById('deleteModal');
 
@@ -309,6 +321,5 @@
 
                 document.getElementById('editPassword').value = "";
             });
-        });
     </script>
 }

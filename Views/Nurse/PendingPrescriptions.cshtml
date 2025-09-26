@@ -2,6 +2,15 @@
 @{
     ViewData["Title"] = "Pending Prescriptions";
     Layout = "~/Views/Shared/_UserLayout.cshtml";
+
+    // Ensure the ViewBag contains the necessary data for pagination
+    Pager pager = new Pager();
+    int pageNo = 0;
+    if (ViewBag.Pager != null)
+    {
+        pager = ViewBag.Pager;
+        pageNo = pager.CurrentPage;
+    }
 }
 @if (TempData["ToastMessage"] != null)
 {
@@ -51,6 +60,7 @@
                         <table class="table table-hover table-striped mb-0 align-middle" id="PrescriptionTable">
                             <thead class="table-primary">
                                 <tr>
+                                    <th>#</th>
                                     <th>Patient</th>
                                     <th>ID Number</th>
                                     <th>Doctor</th>
@@ -61,10 +71,14 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                @{
+                                    int count = ((pager.CurrentPage - 1) * pager.PageSize) + 1;
+                                }
                                 @foreach (var p in Model)
                                 {
                                     var status = p.Medications.All(m => m.IsDispensed) ? "Completed" : "Pending";
                                     <tr>
+                                        <td>@count</td>
                                         <td class="fw-semibold">@p.Appointment.FullName</td>
                                         <td>@p.Appointment.IdNumber</td>
                                         <td>@p.PrescribedBy?.FullName</td>
@@ -88,9 +102,42 @@
                                             </a>
                                         </td>
                                     </tr>
+                                    count++;
                                 }
                             </tbody>
                         </table>
+                        @*  Paging shared partial view *@
+                        <div class="=container">
+                            @if (pager.TotalPages > 0)
+                            {
+                                <ul class="pagination justify-content-end">
+                                    @if (pager.CurrentPage > 1)
+                                    {
+                                        <li class="page-item">
+                                            <a class="page-link" asp-controller="Nurse" asp-action="PendingPrescriptions" asp-route-pg="1">First</a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" asp-controller="Nurse" asp-action="PendingPrescriptions" asp-route-pg="@(pager.CurrentPage - 1)">Previous</a>
+                                        </li>
+                                    }
+                                    @for (var pge = pager.StartPage; pge <= pager.EndPage; pge++)
+                                    {
+                                        <li class="page-item @(pge == pager.CurrentPage ? "active" : "")">
+                                            <a class="page-link" asp-controller="Nurse" asp-action="PendingPrescriptions" asp-route-pg="@pge">@pge</a>
+                                        </li>
+                                    }
+                                    @if (pager.CurrentPage < pager.TotalPages)
+                                    {
+                                        <li class="page-item">
+                                            <a class="page-link" asp-controller="Nurse" asp-action="PendingPrescriptions" asp-route-pg="@(pager.CurrentPage + 1)">Next</a>
+                                        </li>
+                                        <li>
+                                            <a class="page-link" asp-controller="Nurse" asp-action="PendingPrescriptions" asp-route-pg="@(pager.TotalPages)">Last</a>
+                                        </li>
+                                    }
+                                </ul>
+                            }
+                        </div>
                     </div>
             }
         </div>

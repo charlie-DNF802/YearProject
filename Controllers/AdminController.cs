@@ -528,7 +528,7 @@ namespace Ward_Management_System.Controllers
 
         //View List of Registerd Users
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> RegisteredUsers(string gender = "", string ageGroup = "", string search = "", int pg = 1)
+        public async Task<IActionResult> RegisteredUsers(string gender = "", string ageGroup = "", string search = "", DateTime? startDate = null, DateTime? endDate = null, int pg = 1)
         {
             var activeUsers = await _userManager.Users
                 .Where(u => u.IsActive)  // Only users where IsActive == true
@@ -552,9 +552,36 @@ namespace Ward_Management_System.Controllers
                         Address = user.Address,
                         PhoneNumber = user.PhoneNumber,
                         IdNumber = user.IdNumber,
-                        Gender = user.Gender
+                        Gender = user.Gender,
+                        DateAdded = user.DateAdded
                     });
                 }
+            }
+
+            // Get all "User" role accounts for stats only (ignores filters)
+            var allUsersForStats = (from u in _context.Users
+                                    join ur in _context.UserRoles on u.Id equals ur.UserId
+                                    join r in _context.Roles on ur.RoleId equals r.Id
+                                    where r.Name == "User" && u.IsActive
+                                    select new StaffListViewModel
+                                    {
+                                        Id = u.Id,
+                                        FullName = u.FullName,
+                                        Age = u.Age,
+                                        Gender = u.Gender,
+                                        Email = u.Email,
+                                        PhoneNumber = u.PhoneNumber,
+                                        Roles = r.Name,
+                                        DateAdded = u.DateAdded
+                                    }).ToList();
+
+            ViewBag.AllUsersForStats = allUsersForStats;
+
+            if (startDate.HasValue && endDate.HasValue)
+            {
+                staffList = staffList
+                    .Where(s => s.DateAdded.Date >= startDate.Value.Date && s.DateAdded.Date <= endDate.Value.Date)
+                    .ToList();
             }
 
             if (!string.IsNullOrWhiteSpace(gender))
@@ -596,7 +623,7 @@ namespace Ward_Management_System.Controllers
                 pg = 1;
             }
 
-            int recsCount = activeUsers.Count();
+            int recsCount = staffList.Count();
             var pager = new Pager(recsCount, pg, pageSize);
             int recSkip = (pg - 1) * pageSize;
             var data = staffList.Skip(recSkip).Take(pageSize).ToList();
@@ -605,16 +632,12 @@ namespace Ward_Management_System.Controllers
             ViewBag.CurrentGender = gender;
             ViewBag.CurrentAgeGroup = ageGroup;
             ViewBag.CurrentSearch = search;
+            ViewBag.CurrentStartDate = startDate?.ToString("yyyy-MM-dd");
+            ViewBag.CurrentEndDate = endDate?.ToString("yyyy-MM-dd");
 
             return View(data);
 
         }
-
-
-
-
-
-
     }
 
 }

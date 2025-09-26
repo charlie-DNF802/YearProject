@@ -148,7 +148,7 @@
                         </thead>
                         <tbody>
                             @{
-                                int count = 1;
+                                int count = ((pager.CurrentPage - 1) * pager.PageSize) + 1;
                             }
                             @foreach (var StockMedications in Model)
                             {

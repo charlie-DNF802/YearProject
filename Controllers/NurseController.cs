@@ -218,7 +218,7 @@ namespace Ward_Management_System.Controllers
 
         // GET: ViewInstructions
         [Authorize(Roles = "Nurse,Sister,Admin")]
-        public async Task<IActionResult> ViewInstructions()
+        public async Task<IActionResult> ViewInstructions(int pg = 1)
         {
             var doctorRoleId = await _context.Roles
                 .Where(r => r.Name == "Doctor")
@@ -230,7 +230,7 @@ namespace Ward_Management_System.Controllers
                 .Select(ur => ur.UserId)
                 .ToListAsync();
 
-            var data = await _context.Appointments
+            var appointments = await _context.Appointments
                 .Where(a => a.Status == "Admitted" || a.Status == "CheckedIn")
                 .Select(a => new
                 {
@@ -247,7 +247,7 @@ namespace Ward_Management_System.Controllers
                 })
                 .ToListAsync();
 
-            var result = data.Select(a => new PatientsLatestTreatmentVM
+            var result = appointments.Select(a => new PatientsLatestTreatmentVM
             {
                 AppointmentId = a.AppointmentId,
                 FullName = a.FullName,
@@ -260,12 +260,26 @@ namespace Ward_Management_System.Controllers
                 DoctorName = a.Treatment?.DoctorName
             }).ToList();
 
-            return View(result);
+            //Paging
+            const int pageSize = 5;
+            if (pg < 1)
+            {
+                pg = 1;
+            }
+
+            int recsCount = result.Count();
+            var pager = new Pager(recsCount, pg, pageSize);
+            int recSkip = (pg - 1) * pageSize;
+            var data = result.Skip(recSkip).Take(pageSize).ToList();
+
+            ViewBag.Pager = pager;
+
+            return View(data);
         }
 
         //:Get : PendingPrescriptions
         [Authorize(Roles = "Nurse,Sister,Admin")]
-        public async Task<IActionResult> PendingPrescriptions()
+        public async Task<IActionResult> PendingPrescriptions(int pg = 1)
         {
             var prescriptions = await _context.Prescriptions
                 .Include(p => p.Medications)
@@ -277,7 +291,21 @@ namespace Ward_Management_System.Controllers
                     p.Appointment.Status != "Completed")
                 .ToListAsync();
 
-            return View(prescriptions);
+            //Paging
+            const int pageSize = 5;
+            if (pg < 1)
+            {
+                pg = 1;
+            }
+
+            int recsCount = prescriptions.Count();
+            var pager = new Pager(recsCount, pg, pageSize);
+            int recSkip = (pg - 1) * pageSize;
+            var data = prescriptions.Skip(recSkip).Take(pageSize).ToList();
+
+            ViewBag.Pager = pager;
+
+            return View(data);
         }
 
         //Get: Prescriptions
