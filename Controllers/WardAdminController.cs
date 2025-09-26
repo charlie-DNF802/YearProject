@@ -295,13 +295,23 @@ namespace Ward_Management_System.Controllers
         }
 
         // GET: Discharge List (only patients with Ready To Be Discharged)
-        public async Task<IActionResult> DischargeList()
+        public async Task<IActionResult> DischargeList(int pg = 1)
         {
             var readyPatients = await _context.Appointments
                 .Where(a => a.Status == "Ready To Be Discharged")
                 .ToListAsync();
 
-            return View(readyPatients);
+            const int pageSize = 5;
+            if(pg < 1) { pg = 1; }
+
+            int recsCount = readyPatients.Count();
+            var pager = new Pager(recsCount, pg, pageSize);
+            int recSkip = (pg - 1) * pageSize;
+            var data = readyPatients.Skip(recSkip).Take(pageSize).ToList();
+
+            ViewBag.Pager = pager;
+
+            return View(data);
         }
 
         // POST: Mark Appointment as Discharged

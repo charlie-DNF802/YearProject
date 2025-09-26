@@ -387,10 +387,7 @@ namespace Ward_Management_System.Controllers
             return Json(prescriptions);
         }
 
-
-      
-
-        public async Task<IActionResult> MyPrescriptions()
+        public async Task<IActionResult> MyPrescriptions(int pg = 1)
         {
             var doctorId = _userManager.GetUserId(User);
 
@@ -439,7 +436,21 @@ namespace Ward_Management_System.Controllers
                 })
                 .ToListAsync();
 
-            return View(prescriptions);
+            //Paging
+            const int pageSize = 5;
+            if (pg < 1)
+            {
+                pg = 1;
+            }
+
+            int recsCount = prescriptions.Count();
+            var pager = new Pager(recsCount, pg, pageSize);
+            int recSkip = (pg - 1) * pageSize;
+            var data = prescriptions.Skip(recSkip).Take(pageSize).ToList();
+
+            ViewBag.Pager = pager;
+
+            return View(data);
         }
 
         // GET: ScheduleFollowUp
@@ -532,7 +543,7 @@ namespace Ward_Management_System.Controllers
 
 
         // GET: DoctorAppointments
-        public async Task<IActionResult> DoctorAppointments()
+        public async Task<IActionResult> DoctorAppointments(int pg = 1)
         {
             var doctor = await _userManager.GetUserAsync(User);
             if (doctor == null)
@@ -549,8 +560,21 @@ namespace Ward_Management_System.Controllers
                 .ThenBy(a => a.PreferredTime)
                 .ToListAsync();
 
+            //Paging
+            const int pageSize = 5;
+            if (pg < 1)
+            {
+                pg = 1;
+            }
 
-            return View(appointments);
+            int recsCount = appointments.Count();
+            var pager = new Pager(recsCount, pg, pageSize);
+            int recSkip = (pg - 1) * pageSize;
+            var data = appointments.Skip(recSkip).Take(pageSize).ToList();
+
+            ViewBag.Pager = pager;
+
+            return View(data);
         }
 
 
