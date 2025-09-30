@@ -30,59 +30,78 @@ namespace Ward_Management_System.Controllers
         //Get: patient records/folder
         public async Task<IActionResult> PatientList(int pg = 1)
         {
-            var doctorId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var userRoles = await _userManager.GetRolesAsync(await _userManager.FindByIdAsync(userId));
 
+            bool isAdmin = userRoles.Contains("Admin");
+            bool isDoctorRole = userRoles.Contains("Doctor");
 
-            var admittedPatients = await (from ad in _context.Admissions
-                                          join ap in _context.Appointments
-                                          on ad.AppointmentId equals ap.AppointmentId
-                                          join w in _context.wards
-                                          on ad.WardId equals w.WardId
-                                          where ad.Status == "Admitted" && ap.DoctorId == doctorId
-                                          select new AdmissionViewModel
-                                          {
-                                              AdmissionId = ad.AdmissionId,
-                                              AppointmentId = ap.AppointmentId,
-                                              PatientName = ap.FullName,
-                                              IdNumber = ap.IdNumber,
-                                              AdmissionDate = ad.AdmissionDate,
-                                              FolderStatus = _context.PatientFolder
-                                                                      .Include(pf => pf.Appointment)
-                                                                      .Any(pf => pf.Appointment.FullName == ap.FullName && pf.Appointment.IdNumber == ap.IdNumber)
-                                                                      ? "Has Folder" : "No Folder",
-                                              Condition = ad.Condition,
-                                              WardName = w.WardName,
-                                              Status = ad.Status,
+            var admittedPatientsQuery = from ad in _context.Admissions
+                                        join ap in _context.Appointments
+                                        on ad.AppointmentId equals ap.AppointmentId
+                                        join w in _context.wards
+                                        on ad.WardId equals w.WardId
+                                        where ad.Status == "Admitted"
+                                        select new AdmissionViewModel
+                                        {
+                                            AdmissionId = ad.AdmissionId,
+                                            AppointmentId = ap.AppointmentId,
+                                            PatientName = ap.FullName,
+                                            IdNumber = ap.IdNumber,
+                                            AdmissionDate = ad.AdmissionDate,
+                                            FolderStatus = _context.PatientFolder
+                                                            .Include(pf => pf.Appointment)
+                                                            .Any(pf => pf.Appointment.FullName == ap.FullName &&
+                                                                       pf.Appointment.IdNumber == ap.IdNumber)
+                                                            ? "Has Folder" : "No Folder",
+                                            Condition = ad.Condition,
+                                            WardName = w.WardName,
+                                            Status = ad.Status
+                                        };
 
-                                          }).ToListAsync();
-            var checkedInPatients = await (from a in _context.Appointments
-                                           where a.Status == "CheckedIn"
-                                           && !_context.Admissions.Any(ad => ad.AppointmentId == a.AppointmentId) && a.DoctorId == doctorId
-                                           join cr in _context.ConsultationRooms on a.ConsultationRoomId equals cr.RoomId
-                                           select new AdmissionViewModel
-                                           {
-                                               AdmissionId = 0,
-                                               AppointmentId = a.AppointmentId,
-                                               PatientName = a.FullName,
-                                               IdNumber = a.IdNumber,
-                                               AdmissionDate = null,
-                                               Condition = a.Reason,
-                                               WardName = cr.RoomName,
-                                               FolderStatus = _context.PatientFolder
-                                                                .Include(pf => pf.Appointment)
-                                                                .Any(pf => pf.Appointment.FullName == a.FullName && pf.Appointment.IdNumber == a.IdNumber)
-                                                                ? "Has Folder" : "No Folder",
-                                               Status = a.Status
-                                           }).ToListAsync();
-            //gets the recent folder details
+            var checkedInPatientsQuery = from a in _context.Appointments
+                                         where a.Status == "CheckedIn"
+                                               && !_context.Admissions.Any(ad => ad.AppointmentId == a.AppointmentId)
+                                         join cr in _context.ConsultationRooms on a.ConsultationRoomId equals cr.RoomId
+                                         select new AdmissionViewModel
+                                         {
+                                             AdmissionId = 0,
+                                             AppointmentId = a.AppointmentId,
+                                             PatientName = a.FullName,
+                                             IdNumber = a.IdNumber,
+                                             AdmissionDate = null,
+                                             Condition = a.Reason,
+                                             WardName = cr.RoomName,
+                                             FolderStatus = _context.PatientFolder
+                                                              .Include(pf => pf.Appointment)
+                                                              .Any(pf => pf.Appointment.FullName == a.FullName &&
+                                                                         pf.Appointment.IdNumber == a.IdNumber)
+                                                              ? "Has Folder" : "No Folder",
+                                             Status = a.Status
+                                         };
+
+            // Apply Doctor filter only if user is a doctor but NOT an admin
+            if (!isAdmin && isDoctorRole)
+            {
+                admittedPatientsQuery = admittedPatientsQuery.Where(p => _context.Appointments
+                                                 .Any(a => a.AppointmentId == p.AppointmentId && a.DoctorId == userId));
+
+                checkedInPatientsQuery = checkedInPatientsQuery.Where(p => _context.Appointments
+                                                 .Any(a => a.AppointmentId == p.AppointmentId && a.DoctorId == userId));
+            }
+
+            var admittedPatients = await admittedPatientsQuery.ToListAsync();
+            var checkedInPatients = await checkedInPatientsQuery.ToListAsync();
+
+            // Latest folder details
             var folders = _context.PatientFolder
-                                        .Include(f => f.Appointment)
-                                        .GroupBy(f => new { f.Appointment.FullName, f.Appointment.IdNumber })
-                                        .Select(g => g.OrderByDescending(f => f.CreatedDate).First()).ToList();
-
+                                  .Include(f => f.Appointment)
+                                  .GroupBy(f => new { f.Appointment.FullName, f.Appointment.IdNumber })
+                                  .Select(g => g.OrderByDescending(f => f.CreatedDate).First())
+                                  .ToList();
             ViewBag.ModelFolderList = folders;
 
-            var allPatients = admittedPatients.Union(checkedInPatients.ToList()).ToList();
+            var allPatients = admittedPatients.Union(checkedInPatients).ToList();
 
             // Attach FolderId
             foreach (var patient in allPatients)
@@ -94,21 +113,20 @@ namespace Ward_Management_System.Controllers
                 patient.FolderId = folder?.FolderId ?? 0;
             }
 
-            //Paging
+            // Paging
             const int pageSize = 5;
-            if (pg < 1)
-            {
-                pg = 1;
-            }
+            if (pg < 1) pg = 1;
 
             int recsCount = allPatients.Count();
             var pager = new Pager(recsCount, pg, pageSize);
             int recSkip = (pg - 1) * pageSize;
             var data = allPatients.Skip(recSkip).Take(pageSize).ToList();
-            ViewBag.Pager = pager; // Pass the pager to the view for pagination
+            ViewBag.Pager = pager;
 
             return View(data);
         }
+
+
         //Get: Patient vitals
         public async Task<IActionResult> ViewVitals(int folderId, bool latestOnly = false)
         {
@@ -205,16 +223,28 @@ namespace Ward_Management_System.Controllers
         // GET: /MyPatients/
         public async Task<IActionResult> PatientPrescription()
         {
-            var doctorId = _userManager.GetUserId(User);
+            var userId = _userManager.GetUserId(User);
+            var user = await _userManager.FindByIdAsync(userId);
+            var roles = await _userManager.GetRolesAsync(user);
 
-            var patients = await _context.Appointments
-                 .Where(a => a.DoctorId == doctorId &&
-                    (a.Status == "Admitted" || a.Status == "CheckedIn"))
-                .OrderBy(a => a.FullName)
-                .ToListAsync();
+            bool isAdmin = roles.Contains("Admin");
+            bool isDoctor = roles.Contains("Doctor");
+
+            IQueryable<Appointment> query = _context.Appointments
+                .Where(a => a.Status == "Admitted" || a.Status == "CheckedIn")
+                .OrderBy(a => a.FullName);
+
+            // If the user is a Doctor but not Admin, filter by DoctorId
+            if (isDoctor && !isAdmin)
+            {
+                query = query.Where(a => a.DoctorId == userId);
+            }
+
+            var patients = await query.ToListAsync();
 
             return View(patients);
         }
+
 
         //Get: Prescription page
         [HttpGet]
@@ -340,25 +370,41 @@ namespace Ward_Management_System.Controllers
             return RedirectToAction("PatientList", "Doctor");
         }
 
-       
-
-      
         [HttpGet]
         public async Task<IActionResult> GetPatientPrescriptions(string patientIdNumber)
         {
+            var user = await _userManager.GetUserAsync(User);
+            var roles = await _userManager.GetRolesAsync(user);
             var doctorId = _userManager.GetUserId(User);
 
-            var prescriptions = await _context.PrescribedMedications
-                .Where(pm =>
+            IQueryable<PrescribedMedication> query = _context.PrescribedMedications
+                .Include(pm => pm.Prescription)
+                    .ThenInclude(p => p.Appointment)
+                .Include(pm => pm.StockMedications);
+
+            if (roles.Contains("Admin"))
+            {
+                // 🔹 Admin: show all prescriptions for the patient
+                query = query.Where(pm =>
+                    pm.Prescription.Appointment.IdNumber == patientIdNumber &&
+                    !pm.IsDispensed);
+            }
+            else
+            {
+                // 🔹 Doctor: show only their own prescriptions
+                query = query.Where(pm =>
                     pm.Prescription.PrescribedById == doctorId &&
                     pm.Prescription.Appointment.IdNumber == patientIdNumber &&
-                    pm.IsDispensed == false)
+                    !pm.IsDispensed);
+            }
+
+            var prescriptions = await query
                 .Select(pm => new
                 {
                     pm.PrescriptionId,
                     pm.Prescription.PrescribedDate,
                     MedicationId = pm.MedId,
-                    MedicationName = pm.StockMedications.Name, // Ensure StockMedications has a Name
+                    MedicationName = pm.StockMedications.Name,
                     pm.Dosage,
                     pm.Frequency,
                     pm.Duration,
@@ -387,15 +433,35 @@ namespace Ward_Management_System.Controllers
             return Json(prescriptions);
         }
 
+
         public async Task<IActionResult> MyPrescriptions(int pg = 1)
         {
-            var doctorId = _userManager.GetUserId(User);
+            var userId = _userManager.GetUserId(User);
+            var user = await _userManager.GetUserAsync(User);
+            var roles = await _userManager.GetRolesAsync(user);
 
-            var prescriptions = await _context.PrescribedMedications
-                .Where(pm =>
-                    pm.Prescription.PrescribedById == doctorId &&
+            IQueryable<PrescribedMedication> query = _context.PrescribedMedications
+                .Include(pm => pm.Prescription)
+                    .ThenInclude(p => p.Appointment)
+                .Include(pm => pm.StockMedications);
+
+            // 🔹 If user is not Admin, filter prescriptions by their doctorId
+            if (!roles.Contains("Admin"))
+            {
+                query = query.Where(pm =>
+                    pm.Prescription.PrescribedById == userId &&
                     !pm.IsDispensed &&
-                    pm.Prescription.Appointment.Status != "Completed")
+                    pm.Prescription.Appointment.Status != "Completed");
+            }
+            else
+            {
+                // 🔹 Admin sees all prescriptions (optionally still filter out completed if you want)
+                query = query.Where(pm =>
+                    !pm.IsDispensed &&
+                    pm.Prescription.Appointment.Status != "Completed");
+            }
+
+            var prescriptions = await query
                 .Select(pm => new
                 {
                     PatientIdNumber = pm.Prescription.Appointment.IdNumber,
@@ -403,7 +469,7 @@ namespace Ward_Management_System.Controllers
                     PrescriptionId = pm.PrescriptionId,
                     PrescribedDate = pm.Prescription.PrescribedDate,
                     MedicationId = pm.MedId,
-                    MedicationName = pm.StockMedications.Name, // Example field in StockMedications
+                    MedicationName = pm.StockMedications.Name,
                     Dosage = pm.Dosage,
                     Frequency = pm.Frequency,
                     Duration = pm.Duration,
@@ -436,12 +502,10 @@ namespace Ward_Management_System.Controllers
                 })
                 .ToListAsync();
 
-            //Paging
+            // 🔹 Paging
             const int pageSize = 5;
             if (pg < 1)
-            {
                 pg = 1;
-            }
 
             int recsCount = prescriptions.Count();
             var pager = new Pager(recsCount, pg, pageSize);
@@ -452,6 +516,7 @@ namespace Ward_Management_System.Controllers
 
             return View(data);
         }
+
 
         // GET: ScheduleFollowUp
         [HttpGet]
@@ -545,27 +610,38 @@ namespace Ward_Management_System.Controllers
         // GET: DoctorAppointments
         public async Task<IActionResult> DoctorAppointments(int pg = 1)
         {
-            var doctor = await _userManager.GetUserAsync(User);
-            if (doctor == null)
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
                 return Unauthorized();
 
+            var roles = await _userManager.GetRolesAsync(user);
             var allowedStatuses = new[] { "Pending", "CheckedIn", "Scheduled" };
             var today = DateTime.Today;
 
-            var appointments = await _context.Appointments
-                .Where(a => a.DoctorId == doctor.Id && allowedStatuses.Contains(a.Status) && a.PreferredDate >= today)
+            IQueryable<Appointment> query = _context.Appointments
                 .Include(a => a.User)
-                .Include(a => a.ConsultationRoom)
+                .Include(a => a.ConsultationRoom);
+
+            if (roles.Contains("Admin"))
+            {
+                // 🔹 Admin sees all doctors’ appointments
+                query = query.Where(a => allowedStatuses.Contains(a.Status) && a.PreferredDate >= today);
+            }
+            else
+            {
+                // 🔹 Doctor sees only their own appointments
+                query = query.Where(a => a.DoctorId == user.Id && allowedStatuses.Contains(a.Status) && a.PreferredDate >= today);
+            }
+
+            var appointments = await query
                 .OrderBy(a => a.PreferredDate)
                 .ThenBy(a => a.PreferredTime)
                 .ToListAsync();
 
-            //Paging
+            // Paging
             const int pageSize = 5;
             if (pg < 1)
-            {
                 pg = 1;
-            }
 
             int recsCount = appointments.Count();
             var pager = new Pager(recsCount, pg, pageSize);
@@ -576,6 +652,7 @@ namespace Ward_Management_System.Controllers
 
             return View(data);
         }
+
 
 
         [HttpPost]

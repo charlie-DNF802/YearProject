@@ -143,25 +143,75 @@
                                     @if (pager.CurrentPage > 1)
                                     {
                                         <li class="page-item">
-                                            <a class="page-link" asp-controller="Admin" asp-action="RegisteredUsers" asp-route-pg="1">First</a>
+                                            <a class="page-link"
+                                               asp-controller="Admin"
+                                               asp-action="RegisteredUsers"
+                                               asp-route-pg="1"
+                                               asp-route-gender="@ViewBag.CurrentGender"
+                                               asp-route-ageGroup="@ViewBag.CurrentAgeGroup"
+                                               asp-route-search="@ViewBag.CurrentSearch"
+                                               asp-route-startDate="@ViewBag.CurrentStartDate"
+                                               asp-route-endDate="@ViewBag.CurrentEndDate">
+                                                First
+                                            </a>
                                         </li>
                                         <li class="page-item">
-                                            <a class="page-link" asp-controller="Admin" asp-action="RegisteredUsers" asp-route-pg="@(pager.CurrentPage - 1)">Previous</a>
+                                            <a class="page-link"
+                                               asp-controller="Admin"
+                                               asp-action="RegisteredUsers"
+                                               asp-route-pg="@(pager.CurrentPage - 1)"
+                                               asp-route-gender="@ViewBag.CurrentGender"
+                                               asp-route-ageGroup="@ViewBag.CurrentAgeGroup"
+                                               asp-route-search="@ViewBag.CurrentSearch"
+                                               asp-route-startDate="@ViewBag.CurrentStartDate"
+                                               asp-route-endDate="@ViewBag.CurrentEndDate">
+                                                Previous
+                                            </a>
                                         </li>
                                     }
                                     @for (var pge = pager.StartPage; pge <= pager.EndPage; pge++)
                                     {
                                         <li class="page-item @(pge == pager.CurrentPage ? "active" : "")">
-                                            <a class="page-link" asp-controller="Admin" asp-action="RegisteredUsers" asp-route-pg="@pge">@pge</a>
+                                            <a class="page-link"
+                                               asp-controller="Admin"
+                                               asp-action="RegisteredUsers"
+                                               asp-route-pg="@pge"
+                                               asp-route-gender="@ViewBag.CurrentGender"
+                                               asp-route-ageGroup="@ViewBag.CurrentAgeGroup"
+                                               asp-route-search="@ViewBag.CurrentSearch"
+                                               asp-route-startDate="@ViewBag.CurrentStartDate"
+                                               asp-route-endDate="@ViewBag.CurrentEndDate">
+                                                @pge
+                                            </a>
                                         </li>
                                     }
                                     @if (pager.CurrentPage < pager.TotalPages)
                                     {
                                         <li class="page-item">
-                                            <a class="page-link" asp-controller="Admin" asp-action="RegisteredUsers" asp-route-pg="@(pager.CurrentPage + 1)">Next</a>
+                                            <a class="page-link"
+                                               asp-controller="Admin"
+                                               asp-action="RegisteredUsers"
+                                               asp-route-pg="@(pager.CurrentPage + 1)"
+                                               asp-route-gender="@ViewBag.CurrentGender"
+                                               asp-route-ageGroup="@ViewBag.CurrentAgeGroup"
+                                               asp-route-search="@ViewBag.CurrentSearch"
+                                               asp-route-startDate="@ViewBag.CurrentStartDate"
+                                               asp-route-endDate="@ViewBag.CurrentEndDate">
+                                                Next
+                                            </a>
                                         </li>
                                         <li>
-                                            <a class="page-link" asp-controller="Admin" asp-action="RegisteredUsers" asp-route-pg="@(pager.TotalPages)">Last</a>
+                                            <a class="page-link"
+                                               asp-controller="Admin"
+                                               asp-action="RegisteredUsers"
+                                               asp-route-pg="@(pager.TotalPages)"
+                                               asp-route-gender="@ViewBag.CurrentGender"
+                                               asp-route-ageGroup="@ViewBag.CurrentAgeGroup"
+                                               asp-route-search="@ViewBag.CurrentSearch"
+                                               asp-route-startDate="@ViewBag.CurrentStartDate"
+                                               asp-route-endDate="@ViewBag.CurrentEndDate">
+                                                Last
+                                            </a>
                                         </li>
                                     }
                                 </ul>

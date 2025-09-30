@@ -84,6 +84,15 @@
             <input type="text" name="search" value="@(ViewBag.CurrentSearch ?? "")" class="form-control" placeholder="Search staff..." />
             <button type="submit" class="btn btn-primary">Filter</button>
             <a class="btn btn-outline-secondary" asp-controller="Admin" asp-action="StaffList">Clear</a>
+            <a class="btn btn-success ms-2"
+               asp-controller="Reports"
+               asp-action="ExportStaffPdf"
+               asp-route-role="@(ViewBag.CurrentRole)"
+               asp-route-gender="@(ViewBag.CurrentGender)"
+               asp-route-ageGroup="@(ViewBag.CurrentAgeGroup)"
+               asp-route-search="@(ViewBag.CurrentSearch)">
+                <i class="bi bi-file-earmark-pdf"></i> Export PDF
+            </a>
         </div>
 
     </form>
