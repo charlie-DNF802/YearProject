@@ -22,11 +22,6 @@ namespace Ward_Management_System.Controllers
         }
 
         //Takes you to admin welcome page
-        //[Authorize(Roles = "Admin")]
-        //public IActionResult Admin()
-        //{
-        //    return View();
-        //}
         public IActionResult Admin()
         {
             var activeRole = User.Claims.FirstOrDefault(c => c.Type == "ActiveRole")?.Value;

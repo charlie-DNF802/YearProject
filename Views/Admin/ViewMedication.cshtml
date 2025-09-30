@@ -203,25 +203,70 @@
                                 @if (pager.CurrentPage > 1)
                                 {
                                     <li class="page-item">
-                                        <a class="page-link" asp-controller="Admin" asp-action="ViewMedication" asp-route-pg="1">First</a>
+                                        <a class="page-link" 
+                                            asp-controller="Admin"
+                                            asp-action="ViewMedication" 
+                                            asp-route-pg="1"
+                                            asp-route-categoryId="@ViewBag.CurrentCategoryId"
+                                            asp-route-brand="@ViewBag.CurrentBrand"
+                                            asp-route-storage="@ViewBag.CurrentStorage"
+                                            asp-route-search="@ViewBag.CurrentSearch">
+                                           First
+                                       </a>
                                     </li>
                                     <li class="page-item">
-                                        <a class="page-link" asp-controller="Admin" asp-action="ViewMedication" asp-route-pg="@(pager.CurrentPage - 1)">Previous</a>
+                                        <a class="page-link" 
+                                            asp-controller="Admin" 
+                                            asp-action="ViewMedication" 
+                                            asp-route-pg="@(pager.CurrentPage - 1)"
+                                            asp-route-categoryId="@ViewBag.CurrentCategoryId"
+                                            asp-route-brand="@ViewBag.CurrentBrand"
+                                            asp-route-storage="@ViewBag.CurrentStorage"
+                                            asp-route-search="@ViewBag.CurrentSearch">
+                                            Previous
+                                        </a>
                                     </li>
                                 }
                                 @for (var pge = pager.StartPage; pge <= pager.EndPage; pge++)
                                 {
                                     <li class="page-item @(pge == pager.CurrentPage ? "active" : "")">
-                                        <a class="page-link" asp-controller="Admin" asp-action="ViewMedication" asp-route-pg="@pge">@pge</a>
+                                        <a class="page-link" 
+                                            asp-controller="Admin" 
+                                            asp-action="ViewMedication" 
+                                            asp-route-pg="@pge"
+                                            asp-route-categoryId="@ViewBag.CurrentCategoryId"
+                                            asp-route-brand="@ViewBag.CurrentBrand"
+                                            asp-route-storage="@ViewBag.CurrentStorage"
+                                            asp-route-search="@ViewBag.CurrentSearch">
+                                            @pge
+                                        </a>
                                     </li>
                                 }
                                 @if (pager.CurrentPage < pager.TotalPages)
                                 {
                                     <li class="page-item">
-                                        <a class="page-link" asp-controller="Admin" asp-action="ViewMedication" asp-route-pg="@(pager.CurrentPage + 1)">Next</a>
+                                        <a class="page-link" 
+                                            asp-controller="Admin" 
+                                            asp-action="ViewMedication" 
+                                            asp-route-pg="@(pager.CurrentPage + 1)"
+                                            asp-route-categoryId="@ViewBag.CurrentCategoryId"
+                                            asp-route-brand="@ViewBag.CurrentBrand"
+                                            asp-route-storage="@ViewBag.CurrentStorage"
+                                            asp-route-search="@ViewBag.CurrentSearch">
+                                            Next
+                                        </a>
                                     </li>
                                     <li>
-                                        <a class="page-link" asp-controller="Admin" asp-action="ViewMedication" asp-route-pg="@(pager.TotalPages)">Last</a>
+                                        <a class="page-link" 
+                                            asp-controller="Admin"
+                                            asp-action="ViewMedication" 
+                                            asp-route-pg="@(pager.TotalPages)"
+                                            asp-route-categoryId="@ViewBag.CurrentCategoryId"
+                                            asp-route-brand="@ViewBag.CurrentBrand"
+                                            asp-route-storage="@ViewBag.CurrentStorage"
+                                            asp-route-search="@ViewBag.CurrentSearch">
+                                            Last
+                                        </a>
                                     </li>
                                 }
                             </ul>
