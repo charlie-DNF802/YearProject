@@ -38,56 +38,55 @@
     </div>
 
     <!-- Filtering options -->
-    <div class="row justify-content-center mb-4">
-        <!-- Date Filter -->
+    <form method="get" asp-action="CheckIn" class="row justify-content-center mb-4">
+        <!-- Date Picker -->
         <div class="col-md-2">
-            @{
-                var today = DateTime.Today;
-                var tomorrow = today.AddDays(1);
-                var next7 = today.AddDays(7);
-            }
-            <select class="form-select" id="dateFilter">
-                <option value="">All Dates</option>
-                <option value="@today.ToString("yyyy-MM-dd")">Today (@today.ToString("dd/MM/yyyy"))</option>
-                <option value="@tomorrow.ToString("yyyy-MM-dd")">Tomorrow (@tomorrow.ToString("dd/MM/yyyy"))</option>
-                <option value="@next7.ToString("yyyy-MM-dd")">Next 7 days</option>
-            </select>
-
+            <input type="date" class="form-control" name="selectedDate"
+                   value="@(ViewBag.CurrentFilters.selectedDate?.ToString("yyyy-MM-dd"))" />
         </div>
-
         <!-- Status Filter -->
         <div class="col-md-2">
-            <select class="form-select" id="statusFilter">
+            <select class="form-select" name="statusFilter">
                 <option value="">All Statuses</option>
-                <option value="Pending">Pending</option>
-                <option value="CheckedIn">CheckedIn</option>
-                <option value="Admitted">Admitted</option>
+                <option value="Pending" selected="@(ViewBag.CurrentFilters.statusFilter == "Pending")">Pending</option>
+                <option value="CheckedIn" selected="@(ViewBag.CurrentFilters.statusFilter == "CheckedIn")">CheckedIn</option>
+                <option value="Admitted" selected="@(ViewBag.CurrentFilters.statusFilter == "Admitted")">Admitted</option>
             </select>
         </div>
-
         <!-- Age Group Filter -->
         <div class="col-md-2">
-            <select class="form-select" id="ageFilter">
+            <select class="form-select" name="ageFilter">
                 <option value="">All Age Groups</option>
-                <option value="young">Under 30</option>
-                <option value="middle">30-50</option>
-                <option value="senior">50+</option>
+                <option value="child" selected="@(ViewBag.CurrentFilters.ageFilter == "child")">Under 18</option>
+                <option value="young" selected="@(ViewBag.CurrentFilters.ageFilter == "young")">18-29</option>
+                <option value="middle" selected="@(ViewBag.CurrentFilters.ageFilter == "middle")">30-49</option>
+                <option value="senior" selected="@(ViewBag.CurrentFilters.ageFilter == "senior")">50+</option>
             </select>
         </div>
-
-        <!-- Search Input -->
-        <div class="col-md-4">
-            <div class="input-group">
-                <span class="input-group-text bg-white">
-                    <i class="bi bi-search text-muted"></i>
-                </span>
-                <input type="text" class="form-control" id="patientSearch" placeholder="Search for a patient...">
-                <button class="btn btn-outline-secondary" type="button" id="clearFilters">
-                    <i class="bi bi-x-lg"></i>
-                </button>
-            </div>
+        <!-- Search by Patient Name -->
+        <div class="col-md-2">
+            <input type="text" class="form-control" name="searchName"
+                   placeholder="Search by patient name"
+                   value="@(ViewBag.CurrentFilters.searchName)" />
         </div>
-    </div>
+        <!-- Buttons -->
+        <div class="col-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-primary flex-fill">Apply</button>
+            <a asp-action="CheckIn" class="btn btn-secondary flex-fill">Clear</a>
+            <a asp-controller="Reports" asp-action="ExportAppointmentsToPDF"
+               asp-route-selectedDate="@(ViewBag.CurrentFilters.selectedDate?.ToString("yyyy-MM-dd"))"
+               asp-route-statusFilter="@ViewBag.CurrentFilters.statusFilter"
+               asp-route-ageFilter="@ViewBag.CurrentFilters.ageFilter"
+               asp-route-searchName="@ViewBag.CurrentFilters.searchName"
+               class="btn btn-danger flex-fill">
+                Export PDF
+            </a>
+
+        </div>
+
+    </form>
+
+
     <div class="row">
         <div class="col-md-10 offset-md-1">
             <div class="card shadow-sm">
@@ -301,54 +300,7 @@
             }
         });
 
-         // filtering functionality
-          document.addEventListener('DOMContentLoaded', function() {
-            const dateFilter = document.getElementById('dateFilter');
-            const statusFilter = document.getElementById('statusFilter');
-            const ageFilter = document.getElementById('ageFilter');
-            const patientSearch = document.getElementById('patientSearch');
-            const clearFilters = document.getElementById('clearFilters');
-            const rows = document.querySelectorAll("#patientTable tbody tr");
-
-            function applyFilters() {
-                const dateValue = dateFilter.value;
-                const statusValue = statusFilter.value.toLowerCase();
-                const ageValue = ageFilter.value;
-                const searchValue = patientSearch.value.toLowerCase();
-
-                rows.forEach(row => {
-                    const ageText = parseInt(row.querySelector('td:nth-child(3)').textContent);
-                    const dateText = row.querySelector('td:nth-child(4)').textContent.toLowerCase();
-                    const statusText = row.querySelector('td:nth-child(7)').textContent.toLowerCase();
-                    const rowText = row.innerText.toLowerCase();
-
-                    // Matches
-                    let ageMatch = true
-                    if (ageValue === 'young')    ageMatch = ageText < 30;
-                    if (ageValue === 'middle')   ageMatch = ageText >= 30 && ageText <= 50;
-                    if (ageValue === 'senior')   ageMatch = ageText > 50;
-
-                    const dateMatch   = !dateValue || dateText.includes(dateValue);
-                    const statusMatch = !statusValue || statusText.includes(statusValue);
-                    const searchMatch = !searchValue || rowText.includes(searchValue);
-
-                    row.style.display = (dateMatch && statusMatch && ageMatch && searchMatch) ? "" : "none";
-                });
-            }
-
-            [dateFilter, statusFilter, ageFilter, patientSearch].forEach(f => {
-                f.addEventListener('change', applyFilters);
-                f.addEventListener('keyup', applyFilters);
-            });
-
-            clearFilters.addEventListener('click', function() {
-                dateFilter.value = '';
-                statusFilter.value = '';
-                ageFilter.value = '';
-                patientSearch.value = '';
-                applyFilters();
-            });
-        });
+        
     </script>
 }
 

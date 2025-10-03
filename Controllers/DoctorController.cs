@@ -27,20 +27,21 @@ namespace Ward_Management_System.Controllers
             return View();
         }
 
-        //Get: patient records/folder
-        public async Task<IActionResult> PatientList(int pg = 1)
+        // GET: patient records/folder
+        public async Task<IActionResult> PatientList(string locationFilter, string ageFilter, string searchTerm, int pg = 1)
         {
             var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-            var userRoles = await _userManager.GetRolesAsync(await _userManager.FindByIdAsync(userId));
+            var user = await _userManager.FindByIdAsync(userId);
+            var userRoles = await _userManager.GetRolesAsync(user);
 
             bool isAdmin = userRoles.Contains("Admin");
             bool isDoctorRole = userRoles.Contains("Doctor");
 
             var admittedPatientsQuery = from ad in _context.Admissions
                                         join ap in _context.Appointments
-                                        on ad.AppointmentId equals ap.AppointmentId
+                                            on ad.AppointmentId equals ap.AppointmentId
                                         join w in _context.wards
-                                        on ad.WardId equals w.WardId
+                                            on ad.WardId equals w.WardId
                                         where ad.Status == "Admitted"
                                         select new AdmissionViewModel
                                         {
@@ -50,13 +51,13 @@ namespace Ward_Management_System.Controllers
                                             IdNumber = ap.IdNumber,
                                             AdmissionDate = ad.AdmissionDate,
                                             FolderStatus = _context.PatientFolder
-                                                            .Include(pf => pf.Appointment)
-                                                            .Any(pf => pf.Appointment.FullName == ap.FullName &&
-                                                                       pf.Appointment.IdNumber == ap.IdNumber)
-                                                            ? "Has Folder" : "No Folder",
+                                                .Any(pf => pf.Appointment.FullName == ap.FullName &&
+                                                           pf.Appointment.IdNumber == ap.IdNumber)
+                                                           ? "Has Folder" : "No Folder",
                                             Condition = ad.Condition,
                                             WardName = w.WardName,
-                                            Status = ad.Status
+                                            Status = ad.Status,
+                                            Age = ap.Age
                                         };
 
             var checkedInPatientsQuery = from a in _context.Appointments
@@ -73,55 +74,141 @@ namespace Ward_Management_System.Controllers
                                              Condition = a.Reason,
                                              WardName = cr.RoomName,
                                              FolderStatus = _context.PatientFolder
-                                                              .Include(pf => pf.Appointment)
-                                                              .Any(pf => pf.Appointment.FullName == a.FullName &&
-                                                                         pf.Appointment.IdNumber == a.IdNumber)
-                                                              ? "Has Folder" : "No Folder",
-                                             Status = a.Status
+                                                 .Any(pf => pf.Appointment.FullName == a.FullName &&
+                                                            pf.Appointment.IdNumber == a.IdNumber)
+                                                            ? "Has Folder" : "No Folder",
+                                             Status = a.Status,
+                                             Age = a.Age
                                          };
 
-            // Apply Doctor filter only if user is a doctor but NOT an admin
+            // Doctor filter (non-admin doctors only see their patients)
             if (!isAdmin && isDoctorRole)
             {
                 admittedPatientsQuery = admittedPatientsQuery.Where(p => _context.Appointments
-                                                 .Any(a => a.AppointmentId == p.AppointmentId && a.DoctorId == userId));
+                    .Any(a => a.AppointmentId == p.AppointmentId && a.DoctorId == userId));
 
                 checkedInPatientsQuery = checkedInPatientsQuery.Where(p => _context.Appointments
-                                                 .Any(a => a.AppointmentId == p.AppointmentId && a.DoctorId == userId));
+                    .Any(a => a.AppointmentId == p.AppointmentId && a.DoctorId == userId));
             }
 
-            var admittedPatients = await admittedPatientsQuery.ToListAsync();
-            var checkedInPatients = await checkedInPatientsQuery.ToListAsync();
+            var allPatients = await admittedPatientsQuery.Union(checkedInPatientsQuery).ToListAsync();
 
-            // Latest folder details
-            var folders = _context.PatientFolder
-                                  .Include(f => f.Appointment)
-                                  .GroupBy(f => new { f.Appointment.FullName, f.Appointment.IdNumber })
-                                  .Select(g => g.OrderByDescending(f => f.CreatedDate).First())
-                                  .ToList();
-            ViewBag.ModelFolderList = folders;
+            // Apply Filters
+            if (!string.IsNullOrEmpty(locationFilter))
+                allPatients = allPatients.Where(p => p.WardName == locationFilter).ToList();
 
-            var allPatients = admittedPatients.Union(checkedInPatients).ToList();
-
-            // Attach FolderId
-            foreach (var patient in allPatients)
+            if (!string.IsNullOrEmpty(ageFilter))
             {
-                var folder = folders.FirstOrDefault(f =>
-                    f.Appointment.FullName == patient.PatientName &&
-                    f.Appointment.IdNumber == patient.IdNumber);
-
-                patient.FolderId = folder?.FolderId ?? 0;
+                allPatients = ageFilter switch
+                {
+                    "child" => allPatients.Where(p => p.Age < 18).ToList(),
+                    "young" => allPatients.Where(p => p.Age >= 18 && p.Age <= 29).ToList(),
+                    "middle" => allPatients.Where(p => p.Age >= 30 && p.Age <= 49).ToList(),
+                    "senior" => allPatients.Where(p => p.Age >= 50).ToList(),
+                    _ => allPatients
+                };
             }
 
-            // Paging
+            if (!string.IsNullOrEmpty(searchTerm))
+                allPatients = allPatients.Where(p =>
+                    p.PatientName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                    p.IdNumber.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)).ToList();
+
+            // Pass current filters back to the view
+            ViewBag.CurrentFilters = new
+            {
+                locationFilter,
+                ageFilter,
+                searchTerm
+            };
+            // Provide list of wards for dropdown
+            ViewBag.WardList = _context.wards.ToList();
+            ViewBag.ConsultationRooms = _context.ConsultationRooms.ToList();
+
+            var statsSource = allPatients;
+            int totalPatients = statsSource.Count;
+            int admittedCount = statsSource.Count(p => p.Status == "Admitted");
+            int checkedInCount = statsSource.Count(p => p.Status == "CheckedIn");
+            int young = statsSource.Count(u => u.Age < 30);
+            int middle = statsSource.Count(u => u.Age >= 30 && u.Age < 50);
+            int senior = statsSource.Count(u => u.Age >= 50);
+
+            ViewBag.TotalPatients = totalPatients;
+            ViewBag.AdmittedCount = admittedCount;
+            ViewBag.CheckedInCount = checkedInCount;
+            ViewBag.YoungPercent = totalPatients > 0 ? young * 100 / totalPatients : 0;
+            ViewBag.MiddlePercent = totalPatients > 0 ? middle * 100 / totalPatients : 0;
+            ViewBag.SeniorPercent = totalPatients > 0 ? senior * 100 / totalPatients : 0;
+
+            // Chart data: frequency of admissions
+            var admissionsForChartQuery = from ad in _context.Admissions
+                                          join ap in _context.Appointments on ad.AppointmentId equals ap.AppointmentId
+                                          where ad.Status == "Admitted"
+                                          select new { ad.AdmissionId, ad.AdmissionDate, ap.DoctorId, ap.FullName };
+
+            if (!isAdmin && isDoctorRole)
+            {
+                admissionsForChartQuery = admissionsForChartQuery.Where(x => x.DoctorId == userId);
+            }
+
+            var admissionsForChartList = admissionsForChartQuery.ToList();
+
+            var days = Enumerable.Range(0, 30)
+                .Select(i => DateTime.Today.AddDays(-29 + i)) 
+                .ToList();
+
+            var labels = days
+                .Select(d => d.ToString("dd MMM")) 
+                .ToArray();
+
+            var counts = days
+                .Select(d => admissionsForChartList.Count(ad =>
+                    ad.AdmissionDate.Date == d.Date))
+                .ToArray();
+
+            ViewBag.AdmissionChartLabels = labels;
+            ViewBag.AdmissionChartData = counts;
+
+            var latest3 = await (from ad in _context.Admissions
+                                 join ap in _context.Appointments on ad.AppointmentId equals ap.AppointmentId
+                                 join w in _context.wards on ad.WardId equals w.WardId
+                                 where ad.Status == "Admitted"
+                                 && (isAdmin || (isDoctorRole && ap.DoctorId == userId))
+                                 orderby ad.AdmissionDate descending
+                                 select new
+                                 {
+                                     ap.FullName,
+                                     AdmissionDate = ad.AdmissionDate, // keep DateTime for now
+                                     w.WardName,
+                                     ap.IdNumber
+                                 })
+                     .Take(3)
+                     .ToListAsync();
+
+            ViewBag.LatestAdmissions = latest3
+                                        .Select(x => new {
+                                            x.FullName,
+                                            AdmissionDate = x.AdmissionDate.ToString("dd MMM yyyy"),
+                                            x.WardName,
+                                            x.IdNumber
+                                        })
+                                        .ToList();
+
+            // Paging 
             const int pageSize = 5;
             if (pg < 1) pg = 1;
 
             int recsCount = allPatients.Count();
             var pager = new Pager(recsCount, pg, pageSize);
             int recSkip = (pg - 1) * pageSize;
+
             var data = allPatients.Skip(recSkip).Take(pageSize).ToList();
             ViewBag.Pager = pager;
+
+            // Expose chart JSON safely
+            ViewBag.AdmissionChartLabelsJson = System.Text.Json.JsonSerializer.Serialize(labels);
+            ViewBag.AdmissionChartDataJson = System.Text.Json.JsonSerializer.Serialize(counts);
+            ViewBag.LatestAdmissionsJson = System.Text.Json.JsonSerializer.Serialize(latest3);
 
             return View(data);
         }
