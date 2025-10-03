@@ -12,5 +12,6 @@
         public string Condition { get; set; }
         public string WardName { get; set; }
         public string Status { get; set; }
+        public int Age { get; set; }
     }
 }

@@ -23,11 +23,14 @@
     <!-- Filter Form -->
     <div class="row justify-content-center mb-4">
         <form method="get" class="row g-3 col-md-10">
-            <div class="col-md-3">
+            <!-- Patient Name -->
+            <div class="col-md-2">
                 <input type="text" name="PatientName" value="@Model.PatientName"
                        class="form-control" placeholder="Patient Name" />
             </div>
-            <div class="col-md-3">
+
+            <!-- Ward -->
+            <div class="col-md-2">
                 <select name="WardId" class="form-select">
                     <option value="">-- Select Ward --</option>
                     @foreach (var ward in Model.AvailableWards)
@@ -39,21 +42,34 @@
                     }
                 </select>
             </div>
+
+            <!-- From Date -->
             <div class="col-md-2">
                 <input type="date" name="FromDate" value="@(Model.FromDate?.ToString("yyyy-MM-dd"))" class="form-control" />
             </div>
+
+            <!-- To Date -->
             <div class="col-md-2">
                 <input type="date" name="ToDate" value="@(Model.ToDate?.ToString("yyyy-MM-dd"))" class="form-control" />
             </div>
-            <div class="col-md-2">
-                <div class="input-group">
-                    <button type="submit" class="btn btn-info w-75 text-white me-2">Filter</button>
-                    <a asp-action="MonitorMovement" asp-controller="WardAdmin" class="btn btn-secondary btn-sm ">Clear</a>
-                </div>
-            </div>
 
+            <!-- Buttons -->
+            <div class="col-md-4 d-flex gap-2">
+                <button type="submit" class="btn btn-info flex-fill text-white">Filter</button>
+                <a asp-action="MonitorMovement" asp-controller="WardAdmin" class="btn btn-secondary flex-fill">Clear</a>
+                <a asp-controller="Reports" asp-action="ExportPatientMovementsToPDF"
+                   asp-route-PatientName="@Model.PatientName"
+                   asp-route-WardId="@Model.WardId"
+                   asp-route-FromDate="@(Model.FromDate?.ToString("yyyy-MM-dd"))"
+                   asp-route-ToDate="@(Model.ToDate?.ToString("yyyy-MM-dd"))"
+                   class="btn btn-danger flex-fill">
+                    Export PDF
+                </a>
+            </div>
         </form>
     </div>
+
+
 
     <!-- Movements Table -->
     <div class="row">

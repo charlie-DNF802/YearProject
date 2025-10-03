@@ -30,43 +30,74 @@ namespace Ward_Management_System.Controllers
 
         //Check In Page
         [Authorize(Roles = "WardAdmin,Admin")]
-        public async Task<IActionResult> CheckIn(int pg = 1)
+        public async Task<IActionResult> CheckIn(int pg = 1, DateTime? selectedDate = null, string? statusFilter = null, string? ageFilter = null, string? searchName = null)
         {
             var today = DateTime.Today;
 
-            var appointments = await _context.Appointments
+            var query = _context.Appointments
                 .Include(a => a.User)
                 .Include(a => a.ConsultationRoom)
-                .Where(a => a.PreferredDate.Date == today && a.Status != "Cancelled" && a.Status != "Admitted")
-                .OrderBy(a => a.PreferredDate)
-                .ThenBy(a => a.PreferredTime)
-                .ToListAsync();
+                .Where(a => a.Status != "Cancelled" && a.Status != "Admitted");
 
-            ViewBag.ConsultationRooms = _context.ConsultationRooms
-                                .Select(cr => new SelectListItem
-                                {
-                                    Value = cr.RoomId.ToString(),
-                                    Text = cr.RoomName
-                                }).ToList();
-
-            ViewBag.Wards = _context.wards
-                                .Select(w => new SelectListItem
-                                {
-                                    Value = w.WardId.ToString(),
-                                    Text = w.WardName
-                                }).ToList();
-
-            const int pageSize = 5;
-            if (pg < 1)
+            // filter by date
+            if (selectedDate.HasValue)
             {
-                pg = 1;
+                query = query.Where(a => a.PreferredDate.Date == selectedDate.Value.Date);
+            }
+            else
+            {
+                // Default: only show today and future appointments
+                query = query.Where(a => a.PreferredDate >= today);
             }
 
-            int recsCount = appointments.Count();
+            // Status Filter
+            if (!string.IsNullOrEmpty(statusFilter))
+            {
+                query = query.Where(a => a.Status == statusFilter);
+            }
+
+            // Age Group Filter
+            if (!string.IsNullOrEmpty(ageFilter))
+            {
+                query = ageFilter switch
+                {
+                    "child" => query.Where(a => a.Age < 18),
+                    "young" => query.Where(a => a.Age >= 18 && a.Age <= 29),
+                    "middle" => query.Where(a => a.Age >= 30 && a.Age <= 49),
+                    "senior" => query.Where(a => a.Age >= 50),
+                    _ => query
+                };
+            }
+
+            // Search by patient name
+            if (!string.IsNullOrEmpty(searchName))
+            {
+                query = query.Where(a => a.FullName.Contains(searchName));
+            }
+
+            // Sort: earliest dates first, then by time
+            query = query.OrderBy(a => a.PreferredDate).ThenBy(a => a.PreferredTime);
+
+            // Pagination
+            const int pageSize = 5;
+            if (pg < 1) pg = 1;
+
+            int recsCount = await query.CountAsync();
             var pager = new Pager(recsCount, pg, pageSize);
             int recSkip = (pg - 1) * pageSize;
-            var data = appointments.Skip(recSkip).Take(pageSize).ToList();
-            ViewBag.Pager = pager; // Pass the pager to the view for pagination
+
+            var data = await query.Skip(recSkip).Take(pageSize).ToListAsync();
+
+            ViewBag.Pager = pager;
+            ViewBag.CurrentFilters = new { selectedDate, statusFilter, ageFilter, searchName };
+
+            ViewBag.ConsultationRooms = _context.ConsultationRooms
+                .Select(cr => new SelectListItem { Value = cr.RoomId.ToString(), Text = cr.RoomName })
+                .ToList();
+
+            ViewBag.Wards = _context.wards
+                .Select(w => new SelectListItem { Value = w.WardId.ToString(), Text = w.WardName })
+                .ToList();
 
             return View(data);
         }
@@ -115,7 +146,6 @@ namespace Ward_Management_System.Controllers
 
             return RedirectToAction("CheckIn");
         }
-
 
         //Admit Patient
         [Authorize(Roles = "WardAdmin,Admin")]
@@ -184,7 +214,7 @@ namespace Ward_Management_System.Controllers
         }
 
         [Authorize(Roles = "WardAdmin,Admin")]
-        public async Task<IActionResult> ViewAdmissions(int pg =1)
+        public async Task<IActionResult> ViewAdmissions(int pg = 1, string? locationFilter = null, string? statusFilter = null, string? searchTerm = null)
         {
             var admittedPatients = await (from ad in _context.Admissions
                                           where ad.Status != "Discharged"
@@ -208,6 +238,7 @@ namespace Ward_Management_System.Controllers
                                               Status = ad.Status
 
                                           }).ToListAsync();
+
             var checkedInPatients = await (from a in _context.Appointments
                                            where a.Status == "CheckedIn" && !_context.Admissions.Any(ad => ad.AppointmentId == a.AppointmentId)
                                            join cr in _context.ConsultationRooms on a.ConsultationRoomId equals cr.RoomId
@@ -226,32 +257,52 @@ namespace Ward_Management_System.Controllers
                                                                 ? "Has Folder" : "No Folder",
                                                Status = a.Status
                                            }).ToListAsync();
-            //gets the recent folder details
-            var folders = _context.PatientFolder
-                                        .Include(f => f.Appointment)
-                                        .ThenInclude(a => a.User)
-                                        .Include(f => f.Appointment)
-                                        .ThenInclude(a => a.User.EmergencyContacts)
-                                        .GroupBy(f => new { f.Appointment.FullName, f.Appointment.IdNumber })
-                                        .Select(g => g.OrderByDescending(f => f.CreatedDate).First()).ToList();
-                               
-            ViewBag.ModelFolderList = folders;
-            var allPatients = admittedPatients.Union(checkedInPatients.ToList()).ToList();
 
+            // Combine patients
+            var allPatients = admittedPatients.Union(checkedInPatients).ToList();
+
+            // Apply filters
+            if (!string.IsNullOrEmpty(locationFilter))
+                allPatients = allPatients.Where(p => p.WardName == locationFilter).ToList();
+
+            if (!string.IsNullOrEmpty(statusFilter))
+                allPatients = allPatients.Where(p => p.FolderStatus == statusFilter).ToList();
+
+            if (!string.IsNullOrEmpty(searchTerm))
+                allPatients = allPatients.Where(p => p.PatientName.Contains(searchTerm) || p.IdNumber.Contains(searchTerm)).ToList();
+
+            // Paging
             const int pageSize = 5;
-            if (pg < 1)
-            {
-                pg = 1;
-            }
+            if (pg < 1) pg = 1;
 
             int recsCount = allPatients.Count();
             var pager = new Pager(recsCount, pg, pageSize);
             int recSkip = (pg - 1) * pageSize;
             var data = allPatients.Skip(recSkip).Take(pageSize).ToList();
+
             ViewBag.Pager = pager;
+
+            // Keep selected filters in ViewBag
+            ViewBag.CurrentFilters = new { locationFilter, statusFilter, searchTerm };
+
+            // Provide list of wards for dropdown
+            ViewBag.WardList = _context.wards.ToList();
+            ViewBag.ConsultationRooms = _context.ConsultationRooms.ToList();
+
+            // Recent folder details
+            var folders = _context.PatientFolder
+                                .Include(f => f.Appointment)
+                                .ThenInclude(a => a.User)
+                                .Include(f => f.Appointment)
+                                .ThenInclude(a => a.User.EmergencyContacts)
+                                .GroupBy(f => new { f.Appointment.FullName, f.Appointment.IdNumber })
+                                .Select(g => g.OrderByDescending(f => f.CreatedDate).First())
+                                .ToList();
+            ViewBag.ModelFolderList = folders;
 
             return View(data);
         }
+
 
         [Authorize(Roles = "WardAdmin,Admin")]
         [HttpPost]

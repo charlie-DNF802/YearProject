@@ -59,6 +59,19 @@
                     else
                     {
                         <div class="card-body">
+                            <div class="mb-3 d-flex justify-content-end gap-2">
+                                <a asp-action="ExportPendingPrescriptionsPDF" asp-controller="Reports"
+                                   class="btn btn-warning text-white shadow-sm">
+                                    <i class="bi bi-download"></i> Pending 
+                                </a>
+
+                                <a asp-action="ExportAdministeredPrescriptionsPDF" asp-controller="Reports"
+                                   class="btn btn-success text-white shadow-sm">
+                                    <i class="bi bi-archive"></i> Administered
+                                </a>
+                            </div>
+
+
                             <table class="table table-hover align-middle mb-0" id="PrescriptionsTable">
                                 <thead class="table-dark">
                                     <tr>
@@ -101,6 +114,11 @@
                                                         data-patient-name="@patient.PatientName">
                                                     <i class="bi bi-eye"></i> View
                                                 </button>
+                                                <a asp-action="ExportPatientPrescriptionPDF" asp-controller="Reports"
+                                                   asp-route-patientIdNumber="@patient.PatientIdNumber"
+                                                   class="btn btn-danger btn-sm shadow-sm">
+                                                    <i class="bi bi-file-pdf"></i> PDF
+                                                </a>
                                             </td>
                                         </tr>
                                         count++;

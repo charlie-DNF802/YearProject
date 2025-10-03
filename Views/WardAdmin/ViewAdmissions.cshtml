@@ -1,4 +1,6 @@
 ﻿@model IEnumerable<Ward_Management_System.ViewModels.AdmissionViewModel>
+@using Ward_Management_System.Models
+
 @{
     ViewData["Title"] = "Admission List";
     Layout = "~/Views/Shared/_UserLayout.cshtml";
@@ -39,13 +41,63 @@
             <p class="text-muted">View and create patient folders.</p>
         </div>
     </div>
-
-     <!-- Search -->
-    <div class="row mb-4">
-        <div class="col-md-6 offset-md-3">
-            <input type="text" id="searchInput" class="form-control shadow-sm" placeholder="Search by name, ward, or ID...">
+<!-- Filter Form -->
+<form method="get" asp-action="ViewAdmissions" class="row justify-content-center mb-4">
+    <!-- Location Filter -->
+        <div class="col-md-2">
+            <select class="form-select" name="locationFilter">
+                <option value="">All Locations</option>
+                @* Wards *@
+                @foreach (var ward in ViewBag.WardList as List<Ward_Management_System.Models.Wards>)
+                {
+                    <option value="@ward.WardName" selected="@(ViewBag.CurrentFilters?.locationFilter == ward.WardName ? "selected" : null)">
+                        @ward.WardName
+                    </option>
+                }
+                @* Consultation Rooms *@
+                @foreach (var room in ViewBag.ConsultationRooms as List<Ward_Management_System.Models.ConsultationRoom>)
+                {
+                    <option value="@room.RoomName" selected="@(ViewBag.CurrentFilters?.locationFilter == room.RoomName ? "selected" : null)">
+                        @room.RoomName
+                    </option>
+                }
+            </select>
         </div>
-    </div>
+
+
+        <!-- Status Filter -->
+        <div class="col-md-2">
+            <select class="form-select" name="statusFilter">
+                <option value="">All Statuses</option>
+                <option value="Has Folder" selected="@(ViewBag.CurrentFilters?.statusFilter == "Has Folder" ? "selected" : null)">
+                    Has Folder
+                </option>
+                <option value="No Folder" selected="@(ViewBag.CurrentFilters?.statusFilter == "No Folder" ? "selected" : null)">
+                    No Folder
+                </option>
+            </select>
+        </div>
+
+    <!-- Search by Name or ID -->
+        <div class="col-md-3">
+            <input type="text" class="form-control" name="searchTerm" placeholder="Search by Name or ID"
+                   value="@(ViewBag.CurrentFilters?.searchTerm ?? "")" />
+        </div>
+
+        <!-- Buttons -->
+        <div class="col-md-3 d-flex gap-3">
+            <button type="submit" class="btn btn-primary flex-fill">Apply</button>
+            <a asp-action="ViewAdmissions" class="btn btn-secondary flex-fill">Clear</a>
+            <a asp-controller="Reports" asp-action="ExportAdmissionsToPDF"
+               asp-route-locationFilter="@ViewBag.CurrentFilters.locationFilter"
+               asp-route-statusFilter="@ViewBag.CurrentFilters.statusFilter"
+               asp-route-searchTerm="@ViewBag.CurrentFilters.searchTerm"
+               class="btn btn-danger flex-fill">
+                Export PDF
+            </a>
+
+        </div>
+</form>
 
     <!-- Admissions Table -->
     <div class="row">
@@ -259,17 +311,6 @@
                 var toast = new bootstrap.Toast(toastEl);
                 toast.show();
             }
-        });
-
-        //Live Searching
-        document.getElementById("searchInput").addEventListener("keyup", function () {
-        const searchValue = this.value.toLowerCase();
-        const rows = document.querySelectorAll("#AdmissionTable tbody tr");
-
-        rows.forEach(row => {
-        const rowText = row.innerText.toLowerCase();
-        row.style.display = rowText.includes(searchValue) ? "" : "none";
-        });
         });
     </script>
 }
