@@ -353,7 +353,7 @@ namespace Ward_Management_System.Controllers
         //GET ALL HOSPITALINFO AND THEIR DEPARTMENTS
         public IActionResult HospitalInfo()
         {
-            var hospital = _context.HospitalInfo.Include(m => m.Departments).ToList();
+            var hospital = _context.HospitalInfo.ToList();
             return View(hospital);
         }
         //View Medication
