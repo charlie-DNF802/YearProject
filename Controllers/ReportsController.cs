@@ -1,4 +1,5 @@
-﻿using iTextSharp.text;
+﻿using System.Linq;
+using iTextSharp.text;
 using iTextSharp.text.pdf;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -461,7 +462,6 @@ namespace Ward_Management_System.Controllers
                 darkBlue
             );
             var subtitleFont = iTextSharp.text.FontFactory.GetFont(iTextSharp.text.FontFactory.HELVETICA, 10, iTextSharp.text.BaseColor.Gray);
-            doc.Add(new iTextSharp.text.Paragraph("Staff Report", titleFont) { Alignment = iTextSharp.text.Element.ALIGN_CENTER });
             doc.Add(new iTextSharp.text.Paragraph($"Generated on: {DateTime.Now:dd MMM yyyy HH:mm}", subtitleFont) { Alignment = iTextSharp.text.Element.ALIGN_CENTER });
             doc.Add(new iTextSharp.text.Paragraph("\n"));
 
@@ -501,6 +501,37 @@ namespace Ward_Management_System.Controllers
                 count++;
             }
 
+            // === CHART SECTION ===
+            // Path to Base64 image or Chart file (Chart64 image)
+            string chartBase64 = HttpContext.Request.Form["chartImage"];
+
+            if (!string.IsNullOrEmpty(chartBase64))
+            {
+                try
+                {
+                    // Remove "data:image/png;base64," prefix if it exists
+                    if (chartBase64.StartsWith("data:image"))
+                        chartBase64 = chartBase64.Substring(chartBase64.IndexOf(",") + 1);
+
+                    byte[] chartBytes = Convert.FromBase64String(chartBase64);
+                    var chartImage = iTextSharp.text.Image.GetInstance(chartBytes);
+                    chartImage.ScaleToFit(500f, 300f);
+                    chartImage.Alignment = iTextSharp.text.Element.ALIGN_CENTER;
+                    doc.Add(new iTextSharp.text.Paragraph("\nStaff Overview Chart\n", titleFont)
+                    {
+                        Alignment = iTextSharp.text.Element.ALIGN_CENTER
+                    });
+                    doc.Add(chartImage);
+                    doc.Add(new iTextSharp.text.Paragraph("\n"));
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Chart not added: {ex.Message}");
+                }
+            }
+
+            doc.Add(new iTextSharp.text.Paragraph("Staff Report", titleFont) { Alignment = iTextSharp.text.Element.ALIGN_CENTER });
+            doc.Add(new iTextSharp.text.Paragraph("\n"));
             doc.Add(table);
 
             // Footer
@@ -1012,14 +1043,18 @@ namespace Ward_Management_System.Controllers
                 .Where(pm => pm.Prescription.PrescribedById == doctorId &&
                              pm.Prescription.Appointment.IdNumber == patientIdNumber &&
                              !_context.DispensedMedications
-                                 .Any(dm => dm.PrescribedMedicationId == pm.Id)) 
+                                 .Any(dm => dm.PrescribedMedicationId == pm.Id))
                 .ToListAsync();
 
+            var patientFullName = prescriptions.FirstOrDefault()?.Prescription.Appointment.FullName ?? patientIdNumber;
+           
             return GeneratePrescriptionPdf(
                 prescriptions,
-                $"Pending Prescriptions for {patientIdNumber}"
+                $"Pending Prescriptions for {patientFullName}",
+                isSinglePatient: true
             );
         }
+
 
 
         // 3. Export ALL administered prescriptions (history for inventory)
@@ -1037,7 +1072,7 @@ namespace Ward_Management_System.Controllers
             return GeneratePrescriptionPdf(prescriptions, "Administered Prescriptions (History)");
         }
         // Shared PDF generator for prescriptions
-        private FileResult GeneratePrescriptionPdf(List<PrescribedMedication> prescriptions, string titleText)
+        private FileResult GeneratePrescriptionPdf(List<PrescribedMedication> prescriptions, string titleText, bool isSinglePatient = false)
         {
             using (MemoryStream ms = new MemoryStream())
             {
@@ -1052,58 +1087,452 @@ namespace Ward_Management_System.Controllers
                     iTextSharp.text.Image logo = iTextSharp.text.Image.GetInstance(logoPath);
                     logo.ScaleAbsolute(50f, 50f);
                     logo.Alignment = Element.ALIGN_LEFT;
+                    logo.SpacingAfter = 15f;
                     doc.Add(logo);
                 }
 
                 // Title
-                var titleFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 16,BaseColor.Black);
-                Paragraph title = new Paragraph(titleText,titleFont);
+                var titleFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 16, BaseColor.Black);
+                Paragraph title = new Paragraph(titleText, titleFont);
                 title.Alignment = Element.ALIGN_CENTER;
                 title.SpacingAfter = 20f;
                 doc.Add(title);
 
                 if (!prescriptions.Any())
                 {
-                    var prescriptionfont = FontFactory.GetFont(FontFactory.HELVETICA, 12);
-                    doc.Add(new Paragraph("No prescriptions found.", new iTextSharp.text.Font(prescriptionfont)));
+                    var prescriptionFont = FontFactory.GetFont(FontFactory.HELVETICA, 12);
+                    doc.Add(new Paragraph("No prescriptions found.", prescriptionFont));
                     doc.Close();
                     return File(ms.ToArray(), "application/pdf", $"{titleText.Replace(" ", "_")}.pdf");
                 }
 
-                // Table
-                PdfPTable table = new PdfPTable(6);
-                table.WidthPercentage = 100;
-                table.SetWidths(new float[] { 2f, 2f, 2f, 2f, 2f, 2f });
-
-                string[] headers = { "Patient", "ID Number", "Medication", "Dosage", "Frequency", "Status" };
-                foreach (var header in headers)
+                // Table setup
+                PdfPTable table;
+                if (isSinglePatient)
                 {
-                    var headerFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 12, BaseColor.White);
-                    PdfPCell cell = new PdfPCell(new Phrase(header,headerFont));
-                    cell.BackgroundColor = new BaseColor(0, 102, 204);
-                    cell.HorizontalAlignment = Element.ALIGN_CENTER;
-                    table.AddCell(cell);
+                    // Single patient: hide patient column, replace ID Number with patient name
+                    table = new PdfPTable(4);
+                    table.WidthPercentage = 100;
+                    table.SetWidths(new float[] { 2f, 2f, 2f, 2f });
+
+                    string[] headers = { "Medication", "Dosage", "Frequency", "Status" };
+                    foreach (var header in headers)
+                    {
+                        var headerFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 12, BaseColor.White);
+                        PdfPCell cell = new PdfPCell(new Phrase(header, headerFont))
+                        {
+                            BackgroundColor = new BaseColor(0, 102, 204),
+                            HorizontalAlignment = Element.ALIGN_CENTER
+                        };
+                        table.AddCell(cell);
+                    }
+
+                    foreach (var p in prescriptions)
+                    {
+                        table.AddCell(p.StockMedications.Name);
+                        table.AddCell(p.Dosage);
+                        table.AddCell(p.Frequency);
+                        table.AddCell(p.IsDispensed ? "Administered" : "Pending");
+                    }
                 }
-
-                foreach (var p in prescriptions)
+                else
                 {
-                    table.AddCell(p.Prescription.Appointment.FullName);
-                    table.AddCell(p.Prescription.Appointment.IdNumber);
-                    table.AddCell(p.StockMedications.Name);
-                    table.AddCell(p.Dosage);
-                    table.AddCell(p.Frequency);
-                    table.AddCell(p.IsDispensed ? "Administered" : "Pending");
+                    // Default behavior (all other exports)
+                    table = new PdfPTable(6);
+                    table.WidthPercentage = 100;
+                    table.SetWidths(new float[] { 2f, 2f, 2f, 2f, 2f, 2f });
+
+                    string[] headers = { "Patient", "ID Number", "Medication", "Dosage", "Frequency", "Status" };
+                    foreach (var header in headers)
+                    {
+                        var headerFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 12, BaseColor.White);
+                        PdfPCell cell = new PdfPCell(new Phrase(header, headerFont))
+                        {
+                            BackgroundColor = new BaseColor(0, 102, 204),
+                            HorizontalAlignment = Element.ALIGN_CENTER
+                        };
+                        table.AddCell(cell);
+                    }
+
+                    foreach (var p in prescriptions)
+                    {
+                        table.AddCell(p.Prescription.Appointment.FullName);
+                        table.AddCell(p.Prescription.Appointment.IdNumber);
+                        table.AddCell(p.StockMedications.Name);
+                        table.AddCell(p.Dosage);
+                        table.AddCell(p.Frequency);
+                        table.AddCell(p.IsDispensed ? "Administered" : "Pending");
+                    }
                 }
 
                 doc.Add(table);
 
                 // Footer
-                doc.Add(new iTextSharp.text.Paragraph($"\nGenerated by Ward Management System © 2025", iTextSharp.text.FontFactory.GetFont(iTextSharp.text.FontFactory.HELVETICA_OBLIQUE, 10,iTextSharp.text.Font.ITALIC, iTextSharp.text.BaseColor.Gray)) { Alignment = iTextSharp.text.Element.ALIGN_CENTER });
+                doc.Add(new iTextSharp.text.Paragraph($"\nGenerated by Ward Management System © 2025",
+                    iTextSharp.text.FontFactory.GetFont(iTextSharp.text.FontFactory.HELVETICA_OBLIQUE, 10, iTextSharp.text.Font.ITALIC, iTextSharp.text.BaseColor.Gray))
+                { Alignment = iTextSharp.text.Element.ALIGN_CENTER });
 
                 doc.Close();
                 return File(ms.ToArray(), "application/pdf", $"{titleText.Replace(" ", "_")}.pdf");
             }
         }
+
+
+        [HttpPost]
+        public async Task<IActionResult> ExportStatsPDF(string chartBase64)
+        {
+            var doctorId = _userManager.GetUserId(User);
+
+            // 1️ Gather statistics
+            var threeDaysAgo = DateTime.Today.AddDays(-30);
+
+            // 1️⃣ Gather statistics for the last 30 days
+            var prescriptions = await _context.Prescriptions
+                .Include(p => p.Medications)  // load medications
+                .Where(p => p.PrescribedById == doctorId && p.PrescribedDate.Date >= threeDaysAgo)
+                .ToListAsync();
+
+            // 2️⃣ Total prescriptions
+            var totalPrescriptions = prescriptions.Count;
+
+            // 3️⃣ Average items per prescription
+            var avgItemsPerPrescription = prescriptions.Any()
+                ? prescriptions.Average(p => p.Medications.Count)
+                : 0;
+
+            // 2️ Medication counts (last 30 days)
+            var thirtyDaysAgo = DateTime.Today.AddDays(-30);
+            var medCounts = await _context.PrescribedMedications
+                .Include(pm => pm.StockMedications)
+                .Include(pm => pm.Prescription)
+                .Where(pm => pm.Prescription.PrescribedById == doctorId && pm.Prescription.PrescribedDate >= thirtyDaysAgo)
+                .GroupBy(pm => pm.StockMedications.Name) // group only by medication name
+                .Select(g => new
+                {
+                    MedicationName = g.Key,
+                    Count = g.Count()
+                })
+                .OrderByDescending(g => g.Count)
+                .ToListAsync();
+
+            // 3️ Generate PDF
+            using (var ms = new MemoryStream())
+            {
+                var doc = new Document(PageSize.A4, 40f, 40f, 60f, 60f);
+                PdfWriter.GetInstance(doc, ms);
+                doc.Open();
+
+                // Logo
+                var logoPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images/logo.png");
+                if (System.IO.File.Exists(logoPath))
+                {
+                    var logo = iTextSharp.text.Image.GetInstance(logoPath);
+                    logo.ScaleToFit(60f, 60f);
+                    logo.Alignment = Element.ALIGN_LEFT;
+                    logo.SpacingAfter = 15f;
+
+                    doc.Add(logo);
+                }
+
+                // Title
+                var titleFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 16);
+                doc.Add(new Paragraph("Prescription Dashboard Stats", titleFont) { Alignment = Element.ALIGN_CENTER, SpacingAfter = 20f });
+
+                // Stats summary
+                var statsFont = FontFactory.GetFont(FontFactory.HELVETICA, 12);
+                doc.Add(new Paragraph($"Total Prescriptions: {totalPrescriptions}", statsFont));
+                doc.Add(new Paragraph($"Average Items per Prescription: {avgItemsPerPrescription:F2}", statsFont));
+                doc.Add(new Paragraph(" ", statsFont));
+
+                // Chart
+                if (!string.IsNullOrEmpty(chartBase64))
+                {
+                    var bytes = Convert.FromBase64String(chartBase64.Split(',')[1]);
+                    var chartImg = iTextSharp.text.Image.GetInstance(bytes);
+                    chartImg.Alignment = Element.ALIGN_CENTER;
+                    chartImg.ScaleToFit(500f, 250f);
+                    chartImg.SpacingAfter = 20f;
+                    doc.Add(chartImg);
+                }
+
+                // Medication table
+                if (medCounts.Any())
+                {
+                    var table = new PdfPTable(2) { WidthPercentage = 100 };
+                    table.SetWidths(new float[] { 4f, 2f });
+
+                    string[] headers = { "Medication", "Total Prescribed" };
+                    foreach (var header in headers)
+                    {
+                        var cell = new PdfPCell(new Phrase(header, FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 12)))
+                        {
+                            BackgroundColor = new BaseColor(0, 102, 204),
+                            HorizontalAlignment = Element.ALIGN_CENTER
+                        };
+                        table.AddCell(cell);
+                    }
+
+                    foreach (var row in medCounts)
+                    {
+                        table.AddCell(row.MedicationName);
+                        table.AddCell(row.Count.ToString());
+                    }
+
+                    doc.Add(table);
+                }
+                else
+                {
+                    doc.Add(new Paragraph("No prescriptions in the last 30 days.", statsFont));
+                }
+
+                doc.Close();
+                return File(ms.ToArray(), "application/pdf", "Prescription_Stats.pdf");
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ExportPatientStatsPDF(string chartBase64)
+        {
+            var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            var user = await _userManager.FindByIdAsync(userId);
+            var userRoles = await _userManager.GetRolesAsync(user);
+
+            bool isAdmin = userRoles.Contains("Admin");
+            bool isDoctorRole = userRoles.Contains("Doctor");
+
+            // Get all relevant patients
+            var admittedPatientsQuery = from ad in _context.Admissions
+                                        join ap in _context.Appointments on ad.AppointmentId equals ap.AppointmentId
+                                        join w in _context.wards on ad.WardId equals w.WardId
+                                        where ad.Status == "Admitted"
+                                        select new
+                                        {
+                                            ap.AppointmentId,
+                                            ap.FullName,
+                                            ap.IdNumber,
+                                            AdmissionDate = (DateTime?)ad.AdmissionDate,
+                                            ad.Status,
+                                            Age = ap.Age,
+                                            WardName = w.WardName
+                                        };
+
+            var checkedInPatientsQuery = from a in _context.Appointments
+                                         where a.Status == "CheckedIn" && !_context.Admissions.Any(ad => ad.AppointmentId == a.AppointmentId)
+                                         join cr in _context.ConsultationRooms on a.ConsultationRoomId equals cr.RoomId
+                                         select new
+                                         {
+                                             a.AppointmentId,
+                                             a.FullName,
+                                             a.IdNumber,
+                                             AdmissionDate = (DateTime?)null,
+                                             a.Status,
+                                             Age = a.Age,
+                                             WardName = cr.RoomName
+                                         };
+
+            if (!isAdmin && isDoctorRole)
+            {
+                admittedPatientsQuery = admittedPatientsQuery
+                    .Where(x => _context.Appointments.Any(a => a.AppointmentId == x.AppointmentId && a.DoctorId == userId));
+
+                checkedInPatientsQuery = checkedInPatientsQuery
+                    .Where(x => _context.Appointments.Any(a => a.AppointmentId == x.AppointmentId && a.DoctorId == userId));
+            }
+
+            var allPatients = admittedPatientsQuery.Union(checkedInPatientsQuery).ToList();
+
+            int totalPatients = allPatients.Count;
+            int admittedCount = allPatients.Count(p => p.Status == "Admitted");
+            int checkedInCount = allPatients.Count(p => p.Status == "CheckedIn");
+            int young = allPatients.Count(u => u.Age < 30);
+            int middle = allPatients.Count(u => u.Age >= 30 && u.Age < 50);
+            int senior = allPatients.Count(u => u.Age >= 50);
+
+            // Recent Admissions
+            var latest3 = allPatients
+                .Where(p => p.Status == "Admitted" || p.Status == "CheckedIn")
+                .OrderByDescending(p => p.AdmissionDate ?? DateTime.MinValue)
+                .Take(3)
+                .ToList();
+
+            // Generate PDF
+            using (var ms = new MemoryStream())
+            {
+                var doc = new Document(PageSize.A4, 40f, 40f, 60f, 60f);
+                PdfWriter.GetInstance(doc, ms);
+                doc.Open();
+
+                // Logo
+                string logoPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images/logo.png");
+                if (System.IO.File.Exists(logoPath))
+                {
+                    iTextSharp.text.Image logo = iTextSharp.text.Image.GetInstance(logoPath);
+                    logo.ScaleAbsolute(50f, 50f);
+                    logo.Alignment = Element.ALIGN_LEFT;
+                    doc.Add(logo);
+                }
+
+                // Title
+                var titleFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 16, BaseColor.Black);
+                var title = new Paragraph("Patient Statistics", titleFont)
+                {
+                    Alignment = Element.ALIGN_CENTER,
+                    SpacingAfter = 20f
+                };
+                doc.Add(title);
+
+                // Stats summary
+                var statsFont = FontFactory.GetFont(FontFactory.HELVETICA, 12);
+                doc.Add(new Paragraph($"Total Patients: {totalPatients}", statsFont));
+                doc.Add(new Paragraph($"Admitted: {admittedCount} | Checked-In: {checkedInCount}", statsFont));
+                doc.Add(new Paragraph(" ", statsFont));
+
+                // Include Chart if provided
+                if (!string.IsNullOrEmpty(chartBase64))
+                {
+                    var chartBytes = Convert.FromBase64String(chartBase64.Split(',')[1]);
+                    var chartImg = iTextSharp.text.Image.GetInstance(chartBytes);
+                    chartImg.Alignment = Element.ALIGN_CENTER;
+                    chartImg.ScaleToFit(500f, 250f);
+                    chartImg.SpacingAfter = 20f;
+                    doc.Add(chartImg);
+                }
+
+                // Recent Admissions table
+                if (latest3.Any())
+                {
+                    var table = new PdfPTable(3) { WidthPercentage = 100 };
+                    table.SetWidths(new float[] { 4f, 2f, 3f });
+                    string[] headers = { "Patient Name", "Admission Date", "Location" };
+                    foreach (var header in headers)
+                    {
+                        var cell = new PdfPCell(new Phrase(header, FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 12)))
+                        {
+                            BackgroundColor = new BaseColor(0, 102, 204),
+                            HorizontalAlignment = Element.ALIGN_CENTER
+                        };
+                        table.AddCell(cell);
+                    }
+
+                    foreach (var p in latest3)
+                    {
+                        table.AddCell(p.FullName);
+                        table.AddCell(p.AdmissionDate?.ToString("dd MMM yyyy") ?? "-");
+                        table.AddCell(p.WardName);
+                    }
+
+                    doc.Add(table);
+                }
+                else
+                {
+                    doc.Add(new Paragraph("No recent admissions.", statsFont));
+                }
+
+                // Footer
+                doc.Add(new Paragraph($"\nGenerated by Ward Management System © 2025", FontFactory.GetFont(FontFactory.HELVETICA_OBLIQUE, 10, BaseColor.Gray))
+                { Alignment = Element.ALIGN_CENTER });
+
+                doc.Close();
+                return File(ms.ToArray(), "application/pdf", "Patient_Statistics.pdf");
+            }
+        }
+
+        [HttpPost]
+        public IActionResult ExportAppointmentsToPDF(string filteredData)
+        {
+            var appointments = new List<Dictionary<string, object>>();
+
+            if (!string.IsNullOrEmpty(filteredData))
+            {
+                appointments = System.Text.Json.JsonSerializer.Deserialize<List<Dictionary<string, object>>>(filteredData);
+            }
+
+            using (var ms = new MemoryStream())
+            {
+                var doc = new iTextSharp.text.Document(PageSize.A4, 40f, 40f, 60f, 60f);
+                PdfWriter.GetInstance(doc, ms);
+                doc.Open();
+
+                // ✅ Add logo
+                string logoPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images/logo.png");
+                if (System.IO.File.Exists(logoPath))
+                {
+                    var logo = iTextSharp.text.Image.GetInstance(logoPath);
+                    logo.ScaleAbsolute(50f, 50f);
+                    logo.Alignment = Element.ALIGN_LEFT;
+                    doc.Add(logo);
+                }
+
+                // ✅ Title styling
+                var titleFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 16, BaseColor.Black);
+                var subtitleFont = FontFactory.GetFont(FontFactory.HELVETICA, 12, BaseColor.Gray);
+                var normalFont = FontFactory.GetFont(FontFactory.HELVETICA, 11);
+
+                var title = new Paragraph("Appointments Report", titleFont)
+                {
+                    Alignment = Element.ALIGN_CENTER,
+                    SpacingAfter = 10f
+                };
+                doc.Add(title);
+
+                var date = new Paragraph($"Generated on {DateTime.Now:dd MMM yyyy HH:mm}", subtitleFont)
+                {
+                    Alignment = Element.ALIGN_CENTER,
+                    SpacingAfter = 20f
+                };
+                doc.Add(date);
+
+                // ✅ Table content
+                if (appointments.Any())
+                {
+                    var table = new PdfPTable(8) { WidthPercentage = 100 };
+                    table.SetWidths(new float[] { 3f, 1.5f, 1.5f, 2f, 2f, 1.5f, 3f, 1.5f });
+
+                    string[] headers = { "Patient Name", "Age", "Gender", "ID Number", "Date", "Time", "Reason", "Status" };
+                    foreach (var header in headers)
+                    {
+                        var cell = new PdfPCell(new Phrase(header, FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 12)))
+                        {
+                            BackgroundColor = new BaseColor(0, 102, 204),
+                            HorizontalAlignment = Element.ALIGN_CENTER,
+                            Padding = 5
+                        };
+                        table.AddCell(cell);
+                    }
+
+                    foreach (var appt in appointments)
+                    {
+                        table.AddCell(new Phrase(appt["FullName"]?.ToString() ?? "-", normalFont));
+                        table.AddCell(new Phrase(appt["Age"]?.ToString() ?? "-", normalFont));
+                        table.AddCell(new Phrase(appt["Gender"]?.ToString() ?? "-", normalFont));
+                        table.AddCell(new Phrase(appt["IdNumber"]?.ToString() ?? "-", normalFont));
+                        table.AddCell(new Phrase(appt["Date"]?.ToString() ?? "-", normalFont));
+                        table.AddCell(new Phrase(appt["Time"]?.ToString() ?? "-", normalFont));
+                        table.AddCell(new Phrase(appt["Reason"]?.ToString() ?? "-", normalFont));
+                        table.AddCell(new Phrase(appt["Status"]?.ToString() ?? "-", normalFont));
+                    }
+
+                    doc.Add(table);
+                }
+                else
+                {
+                    doc.Add(new Paragraph("No appointments found.", normalFont));
+                }
+
+                // ✅ Footer
+                var footer = new Paragraph("\nGenerated by Ward Management System © 2025", FontFactory.GetFont(FontFactory.HELVETICA_OBLIQUE, 10, BaseColor.Gray))
+                {
+                    Alignment = Element.ALIGN_CENTER
+                };
+                doc.Add(footer);
+
+                doc.Close();
+                return File(ms.ToArray(), "application/pdf", "Appointments_Report.pdf");
+            }
+        }
+
+
+
 
     }
 }

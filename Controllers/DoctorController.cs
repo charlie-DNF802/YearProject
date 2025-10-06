@@ -8,6 +8,7 @@ using Ward_Management_System.Data;
 using Ward_Management_System.Models;
 using Ward_Management_System.ViewModels;
 using Ward_Management_System.DTOs;
+using System.Text.Json;
 
 namespace Ward_Management_System.Controllers
 {
@@ -519,8 +520,6 @@ namespace Ward_Management_System.Controllers
 
             return Json(prescriptions);
         }
-
-
         public async Task<IActionResult> MyPrescriptions(int pg = 1)
         {
             var userId = _userManager.GetUserId(User);
@@ -532,7 +531,7 @@ namespace Ward_Management_System.Controllers
                     .ThenInclude(p => p.Appointment)
                 .Include(pm => pm.StockMedications);
 
-            // 🔹 If user is not Admin, filter prescriptions by their doctorId
+            // Filter based on role
             if (!roles.Contains("Admin"))
             {
                 query = query.Where(pm =>
@@ -542,12 +541,12 @@ namespace Ward_Management_System.Controllers
             }
             else
             {
-                // 🔹 Admin sees all prescriptions (optionally still filter out completed if you want)
                 query = query.Where(pm =>
                     !pm.IsDispensed &&
                     pm.Prescription.Appointment.Status != "Completed");
             }
 
+            // prescriptions list
             var prescriptions = await query
                 .Select(pm => new
                 {
@@ -589,7 +588,7 @@ namespace Ward_Management_System.Controllers
                 })
                 .ToListAsync();
 
-            // 🔹 Paging
+            // 🔹 Paging setup
             const int pageSize = 5;
             if (pg < 1)
                 pg = 1;
@@ -600,6 +599,57 @@ namespace Ward_Management_System.Controllers
             var data = prescriptions.Skip(recSkip).Take(pageSize).ToList();
 
             ViewBag.Pager = pager;
+
+            // Stats
+            ViewBag.TotalPrescriptions = prescriptions.Count();
+            ViewBag.AvgItemsPerPrescription = prescriptions.Any()
+                ? prescriptions.Average(p => p.TotalItems).ToString("0.0") : "0";
+
+            // Chart for the past 30 days
+            var today = DateTime.Today;
+            var startDate = today.AddDays(-29);
+            var last30Days = Enumerable.Range(0, 30)
+                .Select(i => startDate.AddDays(i))
+                .ToList();
+
+            // Extract all inner prescriptions
+            var allInnerPrescriptions = prescriptions
+                .SelectMany(p => p.Prescriptions)
+                .ToList();
+            var medicationCounts = allInnerPrescriptions
+                .GroupBy(p => p.PrescribedDate.Date)
+                .Select(g => new
+                {
+                    Date = g.Key,
+                    Count = g.Sum(p => p.Medications.Count) // sum the medications in each prescription
+                })
+                .ToList();
+
+
+            // Fill in missing days with 0
+            var labels = last30Days.Select(d => d.ToString("MMM dd")).ToList();
+            var counts = last30Days.Select(d =>
+                 medicationCounts.FirstOrDefault(x => x.Date == d)?.Count ?? 0
+            ).ToList();
+
+
+            ViewBag.PrescriptionChartLabelsJson = JsonSerializer.Serialize(labels);
+            ViewBag.PrescriptionChartDataJson = JsonSerializer.Serialize(counts);
+
+            // Recent patients
+            ViewBag.RecentPatients = allInnerPrescriptions
+                .OrderByDescending(p => p.PrescribedDate)
+                .Take(3)
+                .Select(p => new
+                {
+                    p.PrescribedDate,
+                    DatePrescribed = p.PrescribedDate.ToString("MMM dd"),
+                    PatientName = prescriptions
+                        .FirstOrDefault(x => x.Prescriptions.Any(pp => pp.PrescriptionId == p.PrescriptionId))?.PatientName,
+                    PatientIdNumber = prescriptions
+                        .FirstOrDefault(x => x.Prescriptions.Any(pp => pp.PrescriptionId == p.PrescriptionId))?.PatientIdNumber
+                })
+                .ToList();
 
             return View(data);
         }

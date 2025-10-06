@@ -94,9 +94,9 @@ namespace Ward_Management_System.Controllers
             return View(model);
         }
 
-        //View List of staff members
+        // View List of staff members
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> StaffList(string role = "",string gender = "",string ageGroup = "",string search = "",int pg = 1)
+        public async Task<IActionResult> StaffList(string role = "", string gender = "", string ageGroup = "", string search = "", int pg = 1)
         {
             // Get all active users
             var activeUsers = await _userManager.Users
@@ -121,7 +121,8 @@ namespace Ward_Management_System.Controllers
                         Address = user.Address,
                         PhoneNumber = user.PhoneNumber,
                         IdNumber = user.IdNumber,
-                        Gender = user.Gender
+                        Gender = user.Gender,
+                        DateAdded = user.DateAdded
                     });
                 }
             }
@@ -166,14 +167,47 @@ namespace Ward_Management_System.Controllers
                     .ToList();
             }
 
-            // Stats
+            // ===== 📊 STATS =====
             ViewBag.TotalStaff = staffList.Count;
             ViewBag.DoctorCount = staffList.Count(s => s.Roles.Contains("Doctor"));
             ViewBag.NurseCount = staffList.Count(s => s.Roles.Contains("Nurse"));
             ViewBag.SisterCount = staffList.Count(s => s.Roles.Contains("Sister"));
             ViewBag.WardAdminCount = staffList.Count(s => s.Roles.Contains("WardAdmin"));
 
-            // Paging
+            // ===== 📈 EMPLOYEE GROWTH DATA FOR CHART =====
+            var months = Enumerable.Range(1, 6)
+                .Select(i => DateTime.Now.AddMonths(-6 + i))
+                .ToList();
+
+            var monthLabels = months.Select(m => m.ToString("MMM")).ToList();
+
+            var doctorMonthly = months.Select(m =>
+                staffList.Count(s => s.Roles.Contains("Doctor") &&
+                                     s.DateAdded.Month == m.Month &&
+                                     s.DateAdded.Year == m.Year)).ToList();
+
+            var nurseMonthly = months.Select(m =>
+                staffList.Count(s => s.Roles.Contains("Nurse") &&
+                                     s.DateAdded.Month == m.Month &&
+                                     s.DateAdded.Year == m.Year)).ToList();
+
+            var sisterMonthly = months.Select(m =>
+                staffList.Count(s => s.Roles.Contains("Sister") &&
+                                     s.DateAdded.Month == m.Month &&
+                                     s.DateAdded.Year == m.Year)).ToList();
+
+            var wardAdminMonthly = months.Select(m =>
+                staffList.Count(s => s.Roles.Contains("WardAdmin") &&
+                                     s.DateAdded.Month == m.Month &&
+                                     s.DateAdded.Year == m.Year)).ToList();
+
+            ViewBag.MonthLabels = monthLabels;
+            ViewBag.DoctorMonthly = doctorMonthly;
+            ViewBag.NurseMonthly = nurseMonthly;
+            ViewBag.SisterMonthly = sisterMonthly;
+            ViewBag.WardAdminMonthly = wardAdminMonthly;
+
+            // ===== PAGING =====
             const int pageSize = 5;
             if (pg < 1) pg = 1;
 
@@ -184,7 +218,7 @@ namespace Ward_Management_System.Controllers
 
             ViewBag.Pager = pager;
 
-            // Pass current filter values to the view for dropdowns and search input
+            // Keep filters for UI
             ViewBag.CurrentRole = role;
             ViewBag.CurrentGender = gender;
             ViewBag.CurrentAgeGroup = ageGroup;
@@ -192,6 +226,7 @@ namespace Ward_Management_System.Controllers
 
             return View(data);
         }
+
 
 
         //Edit employee

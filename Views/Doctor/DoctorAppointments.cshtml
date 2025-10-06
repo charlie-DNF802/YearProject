@@ -116,6 +116,14 @@
     <div class="row">
         <div class="col-md-10 offset-md-1">
             <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <form id="exportAppointmentsForm" method="post" asp-controller="Reports" asp-action="ExportAppointmentsToPDF">
+                        <input type="hidden" name="filteredData" id="filteredDataInput" />
+                        <button type="submit" class="btn btn-danger btn-sm">
+                            <i class="bi bi-file-earmark-pdf-fill"></i> Export
+                        </button>
+                    </form>
+                </div>
                 @if (!Model.Any())
                 {
                     <div class="alert alert-info">You have no scheduled appointments.</div>
@@ -296,6 +304,33 @@
             // Apply filters on load (optional)
             applyFilters();
         });
+
+               
+        document.getElementById("exportAppointmentsForm").addEventListener("submit", function (e) {
+            e.preventDefault();
+
+            const visibleRows = Array.from(document.querySelectorAll("#patientTable tbody tr"))
+                .filter(row => row.style.display !== "none");
+
+            const exportData = visibleRows.map(row => {
+                const cells = row.querySelectorAll("td");
+                return {
+                    FullName: cells[0].innerText.trim(),
+                    Age: cells[1].innerText.trim(),
+                    Gender: cells[2].innerText.trim(),
+                    IdNumber: cells[3].innerText.trim(),
+                    Date: cells[4].innerText.trim(),
+                    Time: cells[5].innerText.trim(),
+                    Reason: cells[6].innerText.trim(),
+                    Status: cells[7].innerText.trim()
+                };
+            });
+
+            document.getElementById("filteredDataInput").value = JSON.stringify(exportData);
+            e.target.submit(); // now submit to controller
+        });
+    
+
     </script>
 }
 
