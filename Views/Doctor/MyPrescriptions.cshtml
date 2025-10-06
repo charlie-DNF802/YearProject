@@ -3,7 +3,6 @@
     ViewData["Title"] = "My Prescriptions";
     Layout = "~/Views/Shared/_UserLayout.cshtml";
 
-    // Ensure the ViewBag contains the necessary data for pagination
     Pager pager = new Pager();
     int pageNo = 0;
     if (ViewBag.Pager != null)
@@ -34,131 +33,202 @@
     <div class="row justify-content-center mb-4 text-center">
         <div class="col-md-10">
             <h2 class="fw-bold text-primary">@ViewData["Title"]</h2>
-            <p class="lead text-muted">View a list of your prescriptions and update</p>
+            <p class="lead text-muted">View and manage your prescriptions</p>
         </div>
     </div>
 
-    <!-- Search Input -->
-    <div class="row mb-4">
-        <div class="col-md-6 offset-md-3">
-            <input type="text" id="searchInput" class="form-control shadow-sm" placeholder="Search by name, ID Number" />
-        </div>
-    </div>
-
-    <!-- Card wrapping table -->
     <div class="row">
-        <div class="col-md-10 offset-md-1">
+        <!-- Table Section -->
+        <div class="col-lg-8 mb-4">
             <div class="card shadow-sm">
-                <div class="card-body p-0">
+                <div class="card-body">
+                    <!-- Search and Export Buttons -->
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <input type="text" id="searchInput" class="form-control w-50 shadow-sm" placeholder="Search by name, ID Number" />
+                        <div class="d-flex gap-2">
+                            <a asp-action="ExportPendingPrescriptionsPDF" asp-controller="Reports"
+                               class="btn btn-warning text-white shadow-sm">
+                                <i class="bi bi-download"></i> Pending
+                            </a>
+                            <a asp-action="ExportAdministeredPrescriptionsPDF" asp-controller="Reports"
+                               class="btn btn-success text-white shadow-sm">
+                                <i class="bi bi-archive"></i> Completed
+                            </a>
+                        </div>
+                    </div>
+
                     @if (!Model.Any())
                     {
-                        <div class="alert alert-info text-center m-0">
+                        <div class="alert alert-info text-center">
                             You haven't prescribed any medications yet.
                         </div>
                     }
                     else
                     {
-                        <div class="card-body">
-                            <div class="mb-3 d-flex justify-content-end gap-2">
-                                <a asp-action="ExportPendingPrescriptionsPDF" asp-controller="Reports"
-                                   class="btn btn-warning text-white shadow-sm">
-                                    <i class="bi bi-download"></i> Pending 
-                                </a>
-
-                                <a asp-action="ExportAdministeredPrescriptionsPDF" asp-controller="Reports"
-                                   class="btn btn-success text-white shadow-sm">
-                                    <i class="bi bi-archive"></i> Administered
-                                </a>
-                            </div>
-
-
-                            <table class="table table-hover align-middle mb-0" id="PrescriptionsTable">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th>#</th>
-                                        <th>Patient</th>
-                                        <th>Patient ID</th>
-                                        <th>Total Items</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @{
-                                        int count = ((pager.CurrentPage - 1) * pager.PageSize) + 1;
-                                    }
-                                    @foreach (var patient in Model)
-                                    {
-                                        <tr>
-                                            <td>@count</td>
-                                            <td class="fw-semibold">@patient.PatientName</td>
-                                            <td>@patient.PatientIdNumber</td>
-                                            <td>@patient.TotalItems</td>
-                                            <td>
-                                                @if (patient.Status == "Completed")
-                                                {
-                                                    <span class="badge bg-success">Completed</span>
-                                                }
-                                                else if (patient.Status == "Pending")
-                                                {
-                                                    <span class="badge bg-warning text-dark">Pending</span>
-                                                }
-                                                else
-                                                {
-                                                    <span class="badge bg-secondary">@patient.Status</span>
-                                                }
-                                            </td>
-                                            <td>
-                                                <button class="btn btn-info btn-sm view-prescriptions shadow-sm"
-                                                        data-patient-id="@patient.PatientIdNumber"
-                                                        data-patient-name="@patient.PatientName">
-                                                    <i class="bi bi-eye"></i> View
-                                                </button>
-                                                <a asp-action="ExportPatientPrescriptionPDF" asp-controller="Reports"
-                                                   asp-route-patientIdNumber="@patient.PatientIdNumber"
-                                                   class="btn btn-danger btn-sm shadow-sm">
-                                                    <i class="bi bi-file-pdf"></i> PDF
-                                                </a>
-                                            </td>
-                                        </tr>
-                                        count++;
-                                    }
-                                </tbody>
-                            </table>
-                            @*  Paging shared partial view *@
-                            <div class="=container">
-                                @if (pager.TotalPages > 0)
-                                {
-                                    <ul class="pagination justify-content-end">
-                                        @if (pager.CurrentPage > 1)
-                                        {
-                                            <li class="page-item">
-                                                <a class="page-link" asp-controller="Doctor" asp-action="MyPrescriptions" asp-route-pg="1">First</a>
-                                            </li>
-                                            <li class="page-item">
-                                                <a class="page-link" asp-controller="Doctor" asp-action="MyPrescription" asp-route-pg="@(pager.CurrentPage - 1)">Previous</a>
-                                            </li>
-                                        }
-                                        @for (var pge = pager.StartPage; pge <= pager.EndPage; pge++)
-                                        {
-                                            <li class="page-item @(pge == pager.CurrentPage ? "active" : "")">
-                                                <a class="page-link" asp-controller="Doctor" asp-action="MyPrescription" asp-route-pg="@pge">@pge</a>
-                                            </li>
-                                        }
-                                        @if (pager.CurrentPage < pager.TotalPages)
-                                        {
-                                            <li class="page-item">
-                                                <a class="page-link" asp-controller="Doctor" asp-action="MyPrescription" asp-route-pg="@(pager.CurrentPage + 1)">Next</a>
-                                            </li>
-                                            <li>
-                                                <a class="page-link" asp-controller="Doctor" asp-action="MyPrescription" asp-route-pg="@(pager.TotalPages)">Last</a>
-                                            </li>
-                                        }
-                                    </ul>
+                        <table class="table table-hover align-middle mb-0" id="PrescriptionsTable">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Patient</th>
+                                    <th>Patient ID</th>
+                                    <th>Total Items</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @{
+                                    int count = ((pager.CurrentPage - 1) * pager.PageSize) + 1;
                                 }
-                            </div>
+                                @foreach (var patient in Model)
+                                {
+                                    <tr>
+                                        <td>@count</td>
+                                        <td class="fw-semibold">@patient.PatientName</td>
+                                        <td>@patient.PatientIdNumber</td>
+                                        <td>@patient.TotalItems</td>
+                                        <td>
+                                            @if (patient.Status == "Completed")
+                                            {
+                                                <span class="badge bg-success">Completed</span>
+                                            }
+                                            else if (patient.Status == "Pending")
+                                            {
+                                                <span class="badge bg-warning text-dark">Pending</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">@patient.Status</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-info btn-sm view-prescriptions shadow-sm"
+                                                    data-patient-id="@patient.PatientIdNumber"
+                                                    data-patient-name="@patient.PatientName">
+                                                <i class="bi bi-eye"></i> View
+                                            </button>
+                                            <a asp-action="ExportPatientPrescriptionPDF" asp-controller="Reports"
+                                               asp-route-patientIdNumber="@patient.PatientIdNumber"
+                                               class="btn btn-danger btn-sm shadow-sm">
+                                                <i class="bi bi-file-pdf"></i> PDF
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    count++;
+                                }
+                            </tbody>
+                        </table>
+
+                        <!-- Paging -->
+                        <div class="mt-3">
+                            @if (pager.TotalPages > 0)
+                            {
+                                <ul class="pagination justify-content-end">
+                                    @if (pager.CurrentPage > 1)
+                                    {
+                                        <li class="page-item"><a class="page-link" asp-action="MyPrescriptions" asp-route-pg="1">First</a></li>
+                                        <li class="page-item"><a class="page-link" asp-action="MyPrescriptions" asp-route-pg="@(pager.CurrentPage - 1)">Previous</a></li>
+                                    }
+                                    @for (var pge = pager.StartPage; pge <= pager.EndPage; pge++)
+                                    {
+                                        <li class="page-item @(pge == pager.CurrentPage ? "active" : "")">
+                                            <a class="page-link" asp-action="MyPrescriptions" asp-route-pg="@pge">@pge</a>
+                                        </li>
+                                    }
+                                    @if (pager.CurrentPage < pager.TotalPages)
+                                    {
+                                        <li class="page-item"><a class="page-link" asp-action="MyPrescriptions" asp-route-pg="@(pager.CurrentPage + 1)">Next</a></li>
+                                        <li class="page-item"><a class="page-link" asp-action="MyPrescriptions" asp-route-pg="@(pager.TotalPages)">Last</a></li>
+                                    }
+                                </ul>
+                            }
                         </div>
                     }
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Section -->
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+
+                    <!-- Section Header with Export Button -->
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="card-title mb-0 text-primary fw-bold">Prescription Dashboard</h5>
+                        <form id="exportStatsForm" asp-action="ExportStatsPDF" asp-controller="Reports" method="post">
+                            <input type="hidden" id="chartBase64Stats" name="chartBase64" />
+                            <button type="submit" class="btn btn-outline-primary btn-sm shadow-sm">
+                                <i class="bi bi-download"></i> Export Stats
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Stats Tiles -->
+                    <div class="row g-3 mb-4">
+                        <!-- Total -->
+                        <div class="col-12">
+                            <div class="d-flex align-items-center p-3 rounded shadow-sm" style="background: linear-gradient(135deg, #c8e6ff, #e0f7ff);">
+                                <div class="me-3">
+                                    <i class="bi bi-stack fs-2 text-primary"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1 text-uppercase text-muted">Total Patient Prescriptions</h6>
+                                    <h3 class="mb-0 fw-bold">@ViewBag.TotalPrescriptions</h3>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pending -->
+                        <div class="col-12">
+                            <div class="d-flex align-items-center p-3 rounded shadow-sm" style="background: linear-gradient(135deg, #fff4c2, #fff9e0);">
+                                <div class="me-3">
+                                    <i class="bi bi-bar-chart fs-2 text-warning"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1 text-uppercase text-muted">Avg Items/Prescription</h6>
+                                    <h3 class="mb-0 fw-bold text-warning">@ViewBag.AvgItemsPerPrescription</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Prescription Activity Chart Card -->
+                    <div class="card shadow-sm rounded mb-4 border-0">
+                        <div class="card-body p-3">
+                            <h6 class="mb-3 fw-bold text-secondary">Prescriptions in Last 30 Days</h6>
+                            <div style="height:250px;">
+                                <canvas id="prescriptionsChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Patients Card -->
+                    <div class="card shadow-sm rounded border-0">
+                        <div class="card-body p-3">
+                            <h6 class="mb-3 fw-bold text-secondary">Recently Prescribed Patients</h6>
+                            @if (ViewBag.RecentPatients != null && ((IEnumerable<dynamic>)ViewBag.RecentPatients).Any())
+                            {
+                                <ul class="list-group list-group-flush">
+                                    @foreach (var item in (IEnumerable<dynamic>)ViewBag.RecentPatients)
+                                    {
+                                        <li class="list-group-item d-flex justify-content-between align-items-center rounded shadow-sm mb-2" style="background: #f9f9f9;">
+                                            <div>
+                                                <strong>@item.PatientName</strong><br />
+                                                <small>@item.PatientIdNumber</small>
+                                            </div>
+                                            <span class="badge bg-light text-dark">@item.DatePrescribed</span>
+                                        </li>
+                                    }
+                                </ul>
+                            }
+                            else
+                            {
+                                <p class="text-muted">No recent prescriptions.</p>
+                            }
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>
@@ -193,7 +263,6 @@
         </div>
     </div>
 
-
     <!-- Back Button -->
     <div class="text-center mt-4">
         <a asp-action="Index" asp-controller="Doctor" class="btn btn-secondary px-4">
@@ -204,16 +273,15 @@
 
 @section Scripts {
     <script>
-         document.addEventListener("DOMContentLoaded", function () {
+        document.addEventListener("DOMContentLoaded", function () {
             var toastEl = document.getElementById("toastMessage");
             if (toastEl) {
-                var toast = new bootstrap.Toast(toastEl);
-                toast.show();
+                new bootstrap.Toast(toastEl).show();
             }
         });
 
         // Live search
-        document.getElementById("searchInput").addEventListener("keyup", function() {
+        document.getElementById("searchInput").addEventListener("keyup", function () {
             const searchValue = this.value.toLowerCase();
             const rows = document.querySelectorAll("#PrescriptionsTable tbody tr");
             rows.forEach(row => {
@@ -222,7 +290,88 @@
             });
         });
 
-        // Handle view prescription modal
+        // Chart.js — Prescription Trends
+        (function loadChartAndRender() {
+            const labels = @Html.Raw(ViewBag.PrescriptionChartLabelsJson ?? "[]");
+            const counts = @Html.Raw(ViewBag.PrescriptionChartDataJson ?? "[]");
+
+            function renderChart() {
+                const ctx = document.getElementById('prescriptionsChart').getContext('2d');
+                if (window.prescriptionsChartInstance) window.prescriptionsChartInstance.destroy();
+
+                window.prescriptionsChartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Prescriptions Over Time',
+                            data: counts,
+                            fill: true,
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                            tension: 0.3,
+                            pointBackgroundColor: 'rgba(54, 162, 235, 1)',
+                            pointRadius: 5,
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                precision: 0,
+                                title: { display: true, text: 'Medication Count' }
+                            },
+                            x: {
+                                title: { display: true, text: 'Date' },
+                                ticks: {
+                                    maxRotation: 0,
+                                    autoSkip: true,
+                                    maxTicksLimit: 8
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: { display: true, position: 'top' },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                callbacks: {
+                                            label: function (context) {
+                                                    return ` ${context.parsed.y} medications prescribed`;
+                                            }
+                                }
+                            }
+                        },
+                        interaction: {
+                            mode: 'nearest',
+                            axis: 'x',
+                            intersect: false
+                        }
+                    }
+                });
+            }
+
+            if (typeof Chart === 'undefined') {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+                script.onload = renderChart;
+                document.head.appendChild(script);
+            } else {
+                renderChart();
+            }
+        })();
+
+        document.getElementById("exportStatsForm").addEventListener("submit", function () {
+            const chartInput = document.getElementById("chartBase64Stats");
+            if (window.prescriptionsChartInstance && chartInput) {
+                chartInput.value = window.prescriptionsChartInstance.toBase64Image();
+            }
+        });
+
+         // Handle view prescription modal
         $(document).ready(function() {
             $('.view-prescriptions').click(function() {
                 var patientId = $(this).data('patient-id');
@@ -254,8 +403,11 @@
                 });
             });
         });
+
     </script>
 }
+
+
 
 
 
