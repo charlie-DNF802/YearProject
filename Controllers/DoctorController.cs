@@ -142,10 +142,12 @@ namespace Ward_Management_System.Controllers
             ViewBag.SeniorPercent = totalPatients > 0 ? senior * 100 / totalPatients : 0;
 
             // Chart data: frequency of admissions
+            var startDate = DateTime.Today.AddDays(-29);
             var admissionsForChartQuery = from ad in _context.Admissions
                                           join ap in _context.Appointments on ad.AppointmentId equals ap.AppointmentId
-                                          where ad.Status == "Admitted"
+                                          where ad.AdmissionDate >= startDate
                                           select new { ad.AdmissionId, ad.AdmissionDate, ap.DoctorId, ap.FullName };
+
 
             if (!isAdmin && isDoctorRole)
             {
@@ -290,22 +292,6 @@ namespace Ward_Management_System.Controllers
                                                  }).ToListAsync();
 
             return View(treatment);
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> SearchPatients(string term)
-        {
-            var results = await _context.Appointments
-                .Where(a => a.FullName.Contains(term) && (a.Status == "Admitted" || a.Status == "CheckedIn"))
-                .Select(a => new
-                {
-                    id = a.AppointmentId,
-                    text = a.FullName
-                })
-                .Take(20) // limit to 20 results
-                .ToListAsync();
-
-            return Json(results);
         }
 
         // GET: /MyPatients/

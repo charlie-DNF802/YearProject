@@ -37,7 +37,7 @@ namespace Ward_Management_System.Controllers
             var query = _context.Appointments
                 .Include(a => a.User)
                 .Include(a => a.ConsultationRoom)
-                .Where(a => a.Status != "Cancelled" && a.Status != "Admitted");
+                .Where(a => a.Status != "Cancelled" && a.Status != "Admitted" && a.Status != "Discharged");
 
             // filter by date
             if (selectedDate.HasValue)
@@ -46,7 +46,7 @@ namespace Ward_Management_System.Controllers
             }
             else
             {
-                // Default: only show today and future appointments
+                // only show today and future appointments
                 query = query.Where(a => a.PreferredDate >= today);
             }
 
@@ -92,7 +92,12 @@ namespace Ward_Management_System.Controllers
             ViewBag.CurrentFilters = new { selectedDate, statusFilter, ageFilter, searchName };
 
             ViewBag.ConsultationRooms = _context.ConsultationRooms
-                .Select(cr => new SelectListItem { Value = cr.RoomId.ToString(), Text = cr.RoomName })
+                .Select(cr => new SelectListItem
+                {
+                    Value = cr.RoomId.ToString(),
+                    Text = cr.IsAvailable ? cr.RoomName : $"{cr.RoomName} (Occupied)",
+                    Disabled = !cr.IsAvailable
+                })
                 .ToList();
 
             ViewBag.Wards = _context.wards
@@ -141,7 +146,7 @@ namespace Ward_Management_System.Controllers
             _context.Update(room);
             await _context.SaveChangesAsync();
 
-            TempData["ToastMessage"] = "Patient successfully checked in.";
+            TempData["ToastMessage"] = $"{appointment.FullName} checked in to {room.RoomName}.";
             TempData["ToastType"] = "success";
 
             return RedirectToAction("CheckIn");
@@ -155,6 +160,7 @@ namespace Ward_Management_System.Controllers
         {
             //get appointment in order to check if the patient is already admitted
             var appointment = await _context.Appointments
+                .Include(a => a.ConsultationRoom)
                 .FirstOrDefaultAsync(a => a.AppointmentId == AppointmentId);
 
             if (appointment == null)
@@ -206,9 +212,20 @@ namespace Ward_Management_System.Controllers
                 }
             }
 
+            if (appointment.ConsultationRoomId != null)
+            {
+                var room = await _context.ConsultationRooms
+                    .FirstOrDefaultAsync(r => r.RoomId == appointment.ConsultationRoomId);
+
+                if (room != null)
+                {
+                    room.IsAvailable = true; 
+                }
+            }
+
             await _context.SaveChangesAsync();
 
-            TempData["ToastMessage"] = "Patient successfully admitted.";
+            TempData["ToastMessage"] = "Patient successfully admitted. Consultation room freed up.";
             TempData["ToastType"] = "success";
             return RedirectToAction("CheckIn");
         }
@@ -300,6 +317,32 @@ namespace Ward_Management_System.Controllers
                                 .ToList();
             ViewBag.ModelFolderList = folders;
 
+            // Patient Treatments - only latest per patient
+            var treatments = _context.Treatment
+                .Include(t => t.RecordedBy)
+                .Include(t => t.Appointment)
+                .GroupBy(t => new { t.Appointment.FullName, t.Appointment.IdNumber })
+                .Select(g => g.OrderByDescending(t => t.TreatmentDate).FirstOrDefault())
+                .ToList();
+            ViewBag.Treatments = treatments;
+
+            // Patient Vitals - only latest per folder
+            var vitals = _context.PatientVitals
+                .GroupBy(v => v.FolderId)
+                .Select(g => g.OrderByDescending(v => v.VitalsDate).FirstOrDefault())
+                .ToList();
+            ViewBag.Vitals = vitals;
+
+            // Discharges - only latest per patient
+            var discharges = _context.DischargeInformation
+                .Include(d => d.DischargedBy)
+                .Include(d => d.Appointment)
+                .GroupBy(d => new { d.Appointment.FullName, d.Appointment.IdNumber })
+                .Select(g => g.OrderByDescending(d => d.DischargeDate).FirstOrDefault())
+                .ToList();
+            ViewBag.Discharges = discharges;
+
+
             return View(data);
         }
 
@@ -372,7 +415,8 @@ namespace Ward_Management_System.Controllers
         public async Task<IActionResult> Discharge(int appointmentId)
         {
             var appointment = await _context.Appointments
-         .FirstOrDefaultAsync(a => a.AppointmentId == appointmentId);
+                .Include(a => a.ConsultationRoom)
+                .FirstOrDefaultAsync(a => a.AppointmentId == appointmentId);
 
             if (appointment == null)
             {
@@ -391,6 +435,17 @@ namespace Ward_Management_System.Controllers
             if (admission != null)
             {
                 admission.Status = "Discharged";
+            }
+
+            if (appointment.ConsultationRoomId != null)
+            {
+                var room = await _context.ConsultationRooms
+                    .FirstOrDefaultAsync(r => r.RoomId == appointment.ConsultationRoomId);
+
+                if (room != null)
+                {
+                    room.IsAvailable = true; 
+                }
             }
 
             await _context.SaveChangesAsync();

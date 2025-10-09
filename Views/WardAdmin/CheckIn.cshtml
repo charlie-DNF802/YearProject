@@ -225,13 +225,14 @@
                                                         <label for="ConsultationRoomId" class="form-label">Select Consultation Room</label>
                                                         <select name="ConsultationRoomId" class="form-select" required>
                                                             <option value="">-- Select Room --</option>
-                                                              @foreach (var room in (List<SelectListItem>)ViewBag.ConsultationRooms ?? new List<SelectListItem>())
-                                                                {
-                                                                    <option value="@room.Value">@room.Text</option>
-                                                                }
-
-
+                                                            @foreach (var room in (List<SelectListItem>)ViewBag.ConsultationRooms ?? new List<SelectListItem>())
+                                                            {
+                                                                <option value="@room.Value" disabled="@(room.Disabled ? "disabled" : null)">
+                                                                    @room.Text
+                                                                </option>
+                                                            }
                                                         </select>
+
                                                     </div>
                                                     <div class="modal-footer">
                                                         <button type="submit" class="btn btn-success">Check In</button>
