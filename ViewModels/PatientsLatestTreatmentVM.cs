@@ -12,5 +12,7 @@
         public string Notes { get; set; }
         public DateTime? TreatmentDate { get; set; }
         public string DoctorName { get; set; }
+        public bool IsRecent { get; set; }
+
     }
 }

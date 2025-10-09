@@ -165,95 +165,142 @@
                                             </td>
                                         </tr>
                                         count++;
-                                         <!-- Folder Modal -->
-                                            <div class="modal fade" id="folderModal-@admission.AppointmentId" tabindex="-1" aria-labelledby="folderModalLabel-@admission.AppointmentId" aria-hidden="true">
-                                                <div class="modal-dialog modal-lg modal-dialog-centered">
-                                                    <div class="modal-content">
-                                                        <div class="modal-header">
-                                                            <h5 class="modal-title" id="folderModalLabel-@admission.AppointmentId">
-                                                                Folder for @admission.PatientName
-                                                            </h5>
-                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                        </div>
-                                                        <div class="modal-body">
-                                                            @{
-                                                                var folder = ModelFolderList.FirstOrDefault(f =>
-                                                                                            f.Appointment.FullName == admission.PatientName &&
-                                                                                            f.Appointment.IdNumber == admission.IdNumber);
-
-                                                            }
-
-                                                            @if (folder != null)
-                                                            {
-                                                                <div class="row mb-3">
-                                                                    <div class="col-md-6">
-                                                                        <strong>Created By:</strong> @folder.CreatedBy
-                                                                    </div>
-                                                                    <div class="col-md-6">
-                                                                        <strong>Created Date:</strong> @folder.CreatedDate.ToString("g")
-                                                                    </div>
-                                                                </div>
-
-                                                                <div class="row mb-3">
-                                                                    <div class="col-md-6">
-                                                                        <strong>ID Number:</strong> @folder.Appointment.IdNumber
-                                                                    </div>
-                                                                    <div class="col-md-6">
-                                                                        <strong>Gender:</strong> @folder.Appointment.Gender
-                                                                    </div>
-                                                                </div>
-
-                                                                <div class="row mb-3">
-                                                                    <div class="col-md-6">
-                                                                        <strong>Phone:</strong> @folder.Appointment.User.PhoneNumber
-                                                                    </div>
-                                                                    <div class="col-md-6">
-                                                                        <strong>Address:</strong> @folder.Appointment.User.Address
-                                                                    </div>
-                                                                </div>
-
-                                                                <div class="mb-2">
-                                                                    <strong>Status:</strong>
-                                                                    @if (admission.Status == "Admitted")
-                                                                    {
-                                                                        <span class="badge bg-primary">Admitted</span>
-                                                                    }
-                                                                    else if (admission.Status == "CheckedIn")
-                                                                    {
-                                                                        <span class="badge bg-success">Checked In</span>
-                                                                    }
-                                                                </div>
-
-                                                                @if (folder.Appointment.User.EmergencyContacts != null && folder.Appointment.User.EmergencyContacts.Any())
-                                                                {
-                                                                    <hr />
-                                                                    <h5>Emergency Contacts</h5>
-                                                                    @foreach (var e in folder.Appointment.User.EmergencyContacts)
-                                                                    {
-                                                                        <div class="row mb-2">
-                                                                            <div class="col-md-4"><strong>Name:</strong> @e.EmergencyName</div>
-                                                                            <div class="col-md-4"><strong>Phone:</strong> @e.EmergencyPhone</div>
-                                                                            <div class="col-md-4"><strong>Relationship:</strong> @e.EmergencyRelationship</div>
-                                                                        </div>
-                                                                    }
-                                                                }
-                                                            }
-                                                            else
-                                                            {
-                                                                <div class="alert alert-warning">
-                                                                    No folder found for this patient.
-                                                                </div>
-                                                            }
-                                                        </div>
-                                                        <div class="modal-footer">
-                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
                                     }
                                 </tbody>
                             </table>
+                        <!-- Folder Modals -->
+                        @foreach (var admission in Model)
+                        {
+                            <div class="modal fade" id="folderModal-@admission.AppointmentId" tabindex="-1"
+                                 aria-labelledby="folderModalLabel-@admission.AppointmentId" aria-hidden="true">
+                                <!-- ✅ Added modal-dialog-scrollable -->
+                                <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+                                    <div class="modal-content shadow-lg rounded-4">
+                                        <div class="modal-header bg-primary text-white">
+                                            <h5 class="modal-title fw-bold" id="folderModalLabel-@admission.AppointmentId">
+                                                Folder for @admission.PatientName
+                                            </h5>
+                                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+
+                                        <div class="modal-body p-4" style="max-height: 75vh; overflow-y: auto;">
+                                            @{
+                                                var folder = ModelFolderList.FirstOrDefault(f =>
+                                                f.Appointment.FullName == admission.PatientName &&
+                                                f.Appointment.IdNumber == admission.IdNumber);
+
+                                                var latestTreatment = ((List<Treatment>)ViewBag.Treatments)
+                                                .FirstOrDefault(t => t.Appointment.FullName == admission.PatientName &&
+                                                t.Appointment.IdNumber == admission.IdNumber);
+
+                                                var latestVitals = ((List<PatientVitals>)ViewBag.Vitals)
+                                                .FirstOrDefault(v => folder != null && v.FolderId == folder.FolderId);
+
+                                                var latestDischarge = ((List<DischargeInformation>)ViewBag.Discharges)
+                                                .FirstOrDefault(d => d.Appointment.FullName == admission.PatientName &&
+                                                d.Appointment.IdNumber == admission.IdNumber);
+                                            }
+
+                                            @if (folder != null)
+                                            {
+                                                <div class="row mb-3">
+                                                    <div class="col-md-6"><strong>Created By:</strong> @folder.CreatedBy</div>
+                                                    <div class="col-md-6"><strong>Created Date:</strong> @folder.CreatedDate.ToString("g")</div>
+                                                </div>
+
+                                                <div class="row mb-3">
+                                                    <div class="col-md-6"><strong>ID Number:</strong> @folder.Appointment.IdNumber</div>
+                                                    <div class="col-md-6"><strong>Gender:</strong> @folder.Appointment.Gender</div>
+                                                </div>
+
+                                                <div class="row mb-3">
+                                                    <div class="col-md-6"><strong>Phone:</strong> @folder.Appointment.User.PhoneNumber</div>
+                                                    <div class="col-md-6"><strong>Address:</strong> @folder.Appointment.User.Address</div>
+                                                </div>
+
+                                                <div class="mb-2">
+                                                    <strong>Status:</strong>
+                                                    @if (admission.Status == "Admitted")
+                                                    {
+                                                        <span class="badge bg-primary">Admitted</span>
+                                                    }
+                                                    else if (admission.Status == "CheckedIn")
+                                                    {
+                                                        <span class="badge bg-success">Checked In</span>
+                                                    }
+                                                </div>
+
+                                                @if (folder.Appointment.User.EmergencyContacts != null && folder.Appointment.User.EmergencyContacts.Any())
+                                                {
+                                                    <hr />
+                                                    <h5>Emergency Contacts</h5>
+                                                    @foreach (var e in folder.Appointment.User.EmergencyContacts)
+                                                    {
+                                                        <div class="row mb-2">
+                                                            <div class="col-md-4"><strong>Name:</strong> @e.EmergencyName</div>
+                                                            <div class="col-md-4"><strong>Phone:</strong> @e.EmergencyPhone</div>
+                                                            <div class="col-md-4"><strong>Relationship:</strong> @e.EmergencyRelationship</div>
+                                                        </div>
+                                                    }
+                                                }
+
+                                                <hr />
+                                                <h5 class="mt-3 text-primary">Latest Medical History</h5>
+
+                                                @if (latestTreatment != null)
+                                                {
+                                                    <h6 class="text-secondary mt-3">Latest Treatment</h6>
+                                                    <table class="table table-sm table-bordered">
+                                                        <tr><th>Date</th><td>@latestTreatment.TreatmentDate.ToString("g")</td></tr>
+                                                        <tr><th>Procedure</th><td>@latestTreatment.Procedure</td></tr>
+                                                        <tr><th>Notes</th><td>@latestTreatment.Notes</td></tr>
+                                                        <tr><th>Recorded By</th><td>@(latestTreatment.RecordedBy?.FullName ?? "N/A")</td></tr>
+                                                    </table>
+                                                }
+
+                                                @if (latestVitals != null)
+                                                {
+                                                    <h6 class="text-secondary mt-3">Latest Vitals</h6>
+                                                    <table class="table table-sm table-bordered">
+                                                        <tr><th>Date</th><td>@latestVitals.VitalsDate.ToString("g")</td></tr>
+                                                        <tr><th>Blood Type</th><td>@latestVitals.BloodType</td></tr>
+                                                        <tr><th>BP</th><td>@latestVitals.BloodPressure</td></tr>
+                                                        <tr><th>Heart Rate</th><td>@latestVitals.HeartRate bpm</td></tr>
+                                                        <tr><th>Temperature</th><td>@latestVitals.Temperature °C</td></tr>
+                                                        <tr><th>Respiratory Rate</th><td>@latestVitals.RespiratoryRate</td></tr>
+                                                        <tr><th>O₂ Sat</th><td>@latestVitals.OxygenSaturation%</td></tr>
+                                                        <tr><th>Notes</th><td>@latestVitals.Notes</td></tr>
+                                                    </table>
+                                                }
+
+                                                @if (latestDischarge != null)
+                                                {
+                                                    <h6 class="text-secondary mt-3">Latest Discharge</h6>
+                                                    <table class="table table-sm table-bordered">
+                                                        <tr><th>Date</th><td>@latestDischarge.DischargeDate.ToString("g")</td></tr>
+                                                        <tr><th>Discharged By</th><td>@(latestDischarge.DischargedBy?.FullName ?? "N/A")</td></tr>
+                                                        <tr><th>Summary</th><td>@latestDischarge.DischargeSummary</td></tr>
+                                                    </table>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <div class="alert alert-warning">
+                                                    No folder found for this patient.
+                                                </div>
+                                            }
+                                        </div>
+
+                                        <div class="modal-footer bg-light">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                                Close
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
                           @*  Paging shared partial view *@
                         <div class="=container">
                             @if (pager.TotalPages > 0)

@@ -58,7 +58,15 @@
                             {
                                 <tr>
                                     <td>@count</td>
-                                    <td>@patient.FullName</td>
+                                        <td>
+                                            @patient.FullName
+                                            @if (patient.IsRecent)
+                                            {
+                                                <span class="badge bg-danger ms-2 new-badge" data-appointment-id="@patient.AppointmentId">New</span>
+                                            }
+
+                                        </td>
+
                                     <td>@patient.IdNumber</td>
 					                <td>@patient.Age</td>
                                     <td>@patient.Gender</td>
@@ -146,15 +154,51 @@
 @section Scripts{
     <partial name="_ValidationScriptsPartial"/>
     <script>
-         //Live Searching
-        document.getElementById("searchInput").addEventListener("keyup", function () {
-        const searchValue = this.value.toLowerCase();
-        const rows = document.querySelectorAll("#InstructionsTable tbody tr");
+              document.addEventListener("DOMContentLoaded", function () {
+            // Live searching
+            const searchInput = document.getElementById("searchInput");
+            if (searchInput) {
+                searchInput.addEventListener("keyup", function () {
+                    const searchValue = this.value.toLowerCase();
+                    const rows = document.querySelectorAll("#InstructionsTable tbody tr");
+                    rows.forEach(row => {
+                        const rowText = row.innerText.toLowerCase();
+                        row.style.display = rowText.includes(searchValue) ? "" : "none";
+                    });
+                });
+            }
 
-        rows.forEach(row => {
-        const rowText = row.innerText.toLowerCase();
-        row.style.display = rowText.includes(searchValue) ? "" : "none";
+            // When modal opens, mark instruction as viewed and fade badge
+            document.querySelectorAll('[id^="instructionsModal_"]').forEach(modalEl => {
+                modalEl.addEventListener('show.bs.modal', function () {
+                    const appointmentId = this.id.split('_')[1];
+
+                    fetch(`/Nurse/MarkInstructionAsViewed?appointmentId=${appointmentId}`, {
+                        method: "POST",
+                        headers: {
+                            "RequestVerificationToken": document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                        }
+                    }).then(() => {
+                        // Remove badge from table
+                        const badge = document.querySelector(`.new-badge[data-appointment-id='${appointmentId}']`);
+                        if (badge) {
+                            badge.style.transition = "opacity 0.5s";
+                            badge.style.opacity = 0;
+                            setTimeout(() => badge.remove(), 500);
+                        }
+
+                        // // Optionally update dashboard count
+                        // const countBadge = document.querySelector('#dashboardNewCount');
+                        // if (countBadge) {
+                        //     let count = parseInt(countBadge.textContent);
+                        //     count = Math.max(count - 1, 0);
+                        //     countBadge.textContent = count;
+                        //     if (count === 0) countBadge.style.display = "none";
+                        // }
+                    });
+                });
+            });
         });
-        });
+
     </script>
 }

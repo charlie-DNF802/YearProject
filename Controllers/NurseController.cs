@@ -21,8 +21,26 @@ namespace Ward_Management_System.Controllers
             _userManager = userManager;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
+            var doctorRoleId = await _context.Roles
+        .Where(r => r.Name == "Doctor")
+        .Select(r => r.Id)
+        .FirstOrDefaultAsync();
+
+            var usersWithDoctorRole = await _context.UserRoles
+                .Where(ur => ur.RoleId == doctorRoleId)
+                .Select(ur => ur.UserId)
+                .ToListAsync();
+
+            // Count of new instructions in last 24 hours
+            var newInstructionsCount = await _context.Treatment
+                                                     .Where(t => usersWithDoctorRole.Contains(t.RecordedById)
+                                                                 && !t.IsViewed)
+                                                     .CountAsync();
+
+
+            ViewBag.NewInstructionsCount = newInstructionsCount;
             return View();
         }
 
@@ -176,6 +194,7 @@ namespace Ward_Management_System.Controllers
            
             if (ModelState.IsValid)
             {
+                treatment.IsViewed = true;
                 _context.Add(treatment);
                 await _context.SaveChangesAsync();
                 TempData["ToastMessage"] = "Treatment Successfully recorded.";
@@ -241,6 +260,7 @@ namespace Ward_Management_System.Controllers
                             t.Procedure,
                             t.Notes,
                             t.TreatmentDate,
+                            t.IsViewed,
                             DoctorName = t.RecordedBy.UserName
                         })
                         .FirstOrDefault()
@@ -257,8 +277,15 @@ namespace Ward_Management_System.Controllers
                 Procedure = a.Treatment?.Procedure,
                 Notes = a.Treatment?.Notes,
                 TreatmentDate = a.Treatment?.TreatmentDate,
-                DoctorName = a.Treatment?.DoctorName
-            }).ToList();
+                DoctorName = a.Treatment?.DoctorName,
+                IsRecent = a.Treatment != null && !a.Treatment.IsViewed
+
+            }).OrderByDescending(r => r.TreatmentDate)
+              .ToList();
+
+            // Count of new instructions (for dashboard badge)
+            int newInstructionsCount = result.Count(r => r.IsRecent == true);
+            ViewBag.NewInstructionsCount = newInstructionsCount;
 
             //Paging
             const int pageSize = 5;
@@ -276,6 +303,24 @@ namespace Ward_Management_System.Controllers
 
             return View(data);
         }
+
+        [HttpPost]
+        public async Task<IActionResult> MarkInstructionAsViewed(int appointmentId)
+        {
+            var treatment = await _context.Treatment
+                .Where(t => t.AppointmentId == appointmentId)
+                .OrderByDescending(t => t.TreatmentDate)
+                .FirstOrDefaultAsync();
+
+            if (treatment != null && !treatment.IsViewed)
+            {
+                treatment.IsViewed = true;
+                await _context.SaveChangesAsync();
+            }
+
+            return Json(new { success = true });
+        }
+
 
         //:Get : PendingPrescriptions
         [Authorize(Roles = "Nurse,Sister,Admin")]
