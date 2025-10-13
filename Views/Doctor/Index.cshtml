@@ -1,6 +1,6 @@
 ﻿@{
-	ViewData["Title"] = "Doctor Page";
-	Layout = "~/Views/Shared/_UserLayout.cshtml";
+    ViewData["Title"] = "Doctor Page";
+    Layout = "~/Views/Shared/_UserLayout.cshtml";
 }
 <div class="user-background">
     <div class="main-content">
@@ -17,6 +17,21 @@
                 <!-- Dashboard Cards -->
                 <div class="row g-4 px-3 px-md-5">
                     <div class="row justify-content-center g-4 px-3 px-md-5 mb-3">
+                                                <!-- View Patient Folders -->
+                        <div class="col-md-6 col-xl-4">
+                            <div class="card h-100 p-3 shadow dashboard-card border-primary-subtle">
+                                <div class="card-body d-flex flex-column justify-content-between">
+                                    <div>
+                                        <h5 class="card-title text-primary">
+                                            <i class="bi bi-folder-fill me-2"></i> Patient Folders
+                                        </h5>
+                                        <p class="card-text">Browse through all patient folders and view medical history.</p>
+                                    </div>
+                                    <a asp-controller="Doctor" asp-action="PatientFolders" class="btn btn-primary mt-3">View Folders</a>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Patient List Card -->
                         <div class="col-md-6 col-xl-4">
                             <div class="card h-100 p-3 shadow dashboard-card border-warning-subtle">
@@ -79,7 +94,7 @@
                             </div>
                         </div>
 
-                        <!-- View my appointments -->
+                        <!-- My Appointments -->
                         <div class="col-md-6 col-xl-4">
                             <div class="card h-100 p-3 shadow dashboard-card border-success-subtle">
                                 <div class="card-body d-flex flex-column justify-content-between">
@@ -93,6 +108,8 @@
                                 </div>
                             </div>
                         </div>
+
+
                     </div>
 
                 </div>

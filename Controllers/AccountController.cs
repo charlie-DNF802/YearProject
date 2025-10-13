@@ -1,4 +1,5 @@
 ﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -213,6 +214,7 @@ namespace Ward_Management_System.Controllers
             }
             return View(new ChangePasswordViewModel { Email = username });
         }
+
         //Posts it to the database as new password
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -245,6 +247,70 @@ namespace Ward_Management_System.Controllers
                 return View(model);
             }
         }
+
+        // GET: Update Password
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> UpdatePassword()
+        {
+            var user = await userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            return View(new UpdatePasswordViewModel());
+        }
+
+        // POST: Update Password
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize]
+        public async Task<IActionResult> UpdatePassword(UpdatePasswordViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors)
+                                      .Select(e => e.ErrorMessage)
+                                      .ToList();
+
+                string detailedErrors = string.Join("<br/>", errors);
+
+                TempData["ToastMessage"] = $"Unable to update password. {detailedErrors}";
+                TempData["ToastType"] = "Error";
+                return View(model);
+            }
+
+            var user = await userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return RedirectToAction("Login", "Account");
+            }
+
+            var result = await userManager.ChangePasswordAsync(user, model.OldPassword, model.NewPassword);
+
+            if (result.Succeeded)
+            {
+                TempData["ToastMessage"] = "Your password has been changed successfully.";
+                TempData["ToastType"] = "Success";
+                return RedirectToAction("UpdatePassword", "Account"); // or Dashboard
+            }
+
+            var errorMessages = result.Errors.Select(e => e.Description).ToList();
+            string combinedErrors = string.Join("<br/>", errorMessages);
+
+            TempData["ToastMessage"] = $"Failed to change password. {combinedErrors}";
+            TempData["ToastType"] = "danger";
+
+            // Optional: also keep ModelState errors visible in case toast disappears quickly
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError("", error.Description);
+            }
+
+            return View(model);
+        }
+
 
         [HttpPost]
         public async Task<IActionResult> SwitchRole(string role)

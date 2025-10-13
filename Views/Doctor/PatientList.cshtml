@@ -40,7 +40,6 @@
 
     <!-- Filter Form -->
     <form method="get" asp-action="PatientList" class="row justify-content-center mb-4">
-        <!-- (your existing filters here, unchanged) -->
         <div class="col-md-3">
             <select class="form-select" name="locationFilter">
                 <option value="">All Locations</option>
@@ -70,7 +69,7 @@
         </div>
 
         <div class="col-md-3">
-            <input type="text" class="form-control" name="searchTerm" placeholder="Search by Name or ID"
+            <input type="text" class="form-control" name="searchTerm" placeholder="🔍 Search by Name or ID"
                    value="@(ViewBag.CurrentFilters?.searchTerm ?? "")" />
         </div>
 
@@ -161,6 +160,11 @@
                                                    class="btn btn-warning btn-sm text-white">
                                                     Instruct Discharge
                                                 </a>
+                                            }
+                                            else if (admission.Status == "Ready To Be Discharged")
+                                            {
+                                                
+                                                <a class="btn btn-warning btn-sm text-white" disabled title="Patient has been marked already">Instruct Discharge</a>
                                             }
                                             else
                                             {

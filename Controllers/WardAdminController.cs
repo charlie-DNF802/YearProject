@@ -192,6 +192,12 @@ namespace Ward_Management_System.Controllers
             }
             appointment.Status = "Admitted";
 
+            var hasExistingFolder = await _context.PatientFolder
+                    .Include(f => f.Appointment)
+                    .AnyAsync(f => f.Appointment.IdNumber == appointment.IdNumber);
+
+            admission.FolderStatus = hasExistingFolder ? "Has Folder" : "No Folder";
+
             admission.Status = appointment.Status;
             admission.AppointmentId = appointment.AppointmentId;
             _context.Admissions.Add(admission);
@@ -247,7 +253,7 @@ namespace Ward_Management_System.Controllers
                                               IdNumber = ap.IdNumber,
                                               AdmissionDate = ad.AdmissionDate,
                                               FolderStatus = _context.PatientFolder
-                                                                      .Include(pf => pf.Appointment)
+                                                     .Include(pf => pf.Appointment)
                                                                       .Any(pf => pf.Appointment.FullName == ap.FullName && pf.Appointment.IdNumber == ap.IdNumber)
                                                                       ? "Has Folder" : "No Folder",
                                               Condition = ad.Condition,
@@ -269,7 +275,7 @@ namespace Ward_Management_System.Controllers
                                                Condition = a.Reason,
                                                WardName = cr.RoomName,
                                                FolderStatus = _context.PatientFolder
-                                                                .Include(pf => pf.Appointment)
+                                                                  .Include(pf => pf.Appointment)
                                                                 .Any(pf => pf.Appointment.FullName == a.FullName && pf.Appointment.IdNumber == a.IdNumber)
                                                                 ? "Has Folder" : "No Folder",
                                                Status = a.Status
@@ -356,7 +362,34 @@ namespace Ward_Management_System.Controllers
                                             .FirstOrDefaultAsync(a => a.AppointmentId == appointmentId);
 
 
-            if (appointment == null) return NotFound();
+            if (appointment == null)
+            {
+                TempData["ToastMessage"] = "Appointment not found.";
+                TempData["ToastType"] = "error";
+                return RedirectToAction("ViewAdmissions", "WardAdmin");
+            }
+
+            var admission = await _context.Admissions
+                .FirstOrDefaultAsync(a => a.AppointmentId == appointmentId);
+
+            var hasFolder = await _context.Admissions
+              .AnyAsync(a => a.UserId == appointment.UserId &&
+                    a.Appointment.IdNumber == appointment.IdNumber &&
+                    a.FolderStatus == "Has Folder");
+
+            if (hasFolder)
+            {
+                TempData["ToastMessage"] = "This patient already has a folder.";
+                TempData["ToastType"] = "warning";
+                return RedirectToAction("ViewAdmissions", "WardAdmin");
+            }
+
+            if (admission == null)
+            {
+                TempData["ToastMessage"] = "No admission record found for this appointment.";
+                TempData["ToastType"] = "error";
+                return RedirectToAction("ViewAdmissions", "WardAdmin");
+            }
 
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return NotFound();
@@ -367,6 +400,8 @@ namespace Ward_Management_System.Controllers
                 CreatedDate = DateTime.Now
             };
             _context.PatientFolder.Add(folder);
+            admission.FolderStatus = "Has Folder";
+            _context.Admissions.Update(admission);
 
             await _context.SaveChangesAsync();
             TempData["ToastMessage"] = "Patient folder created successfully.";
