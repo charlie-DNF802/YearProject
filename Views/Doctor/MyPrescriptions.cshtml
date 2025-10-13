@@ -44,16 +44,17 @@
                 <div class="card-body">
                     <!-- Search and Export Buttons -->
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <input type="text" id="searchInput" class="form-control w-50 shadow-sm" placeholder="Search by name, ID Number" />
+                        <input type="text" id="searchInput" class="form-control w-50 shadow-sm" placeholder="🔍 Search by name, ID Number" />
                         <div class="d-flex gap-2">
                             <a asp-action="ExportPendingPrescriptionsPDF" asp-controller="Reports"
                                class="btn btn-warning text-white shadow-sm">
                                 <i class="bi bi-download"></i> Pending
                             </a>
-                            <a asp-action="ExportAdministeredPrescriptionsPDF" asp-controller="Reports"
+                            <a asp-action="AdministeredPrescriptions" asp-controller="Doctor"
                                class="btn btn-success text-white shadow-sm">
                                 <i class="bi bi-archive"></i> Completed
                             </a>
+
                         </div>
                     </div>
 

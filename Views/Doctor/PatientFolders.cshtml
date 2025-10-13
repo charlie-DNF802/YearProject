@@ -1,0 +1,199 @@
+﻿@model IEnumerable<Ward_Management_System.ViewModels.PatientFolderVM>
+
+@{
+    ViewData["Title"] = "Patient Folders";
+    Layout = "~/Views/Shared/_UserLayout.cshtml";
+}
+
+<div class="container-fluid patient-dashboard py-5">
+    <div class="row justify-content-center mb-4 ">
+        <div class="col-md-10 text-center">
+            <h2 class="fw-bold text-primary">Patient Folders</h2>
+            <p>View List Of Patients & their Folders</p>
+        </div>
+    </div>
+
+    <div class="row justify-content-center mb-4">
+        <div class="col-md-6">
+            <input type="text" id="searchInput" class="form-control form-control-lg shadow-sm"
+                   placeholder="🔍 Search patient by name or ID number..." />
+        </div>
+    </div>
+
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info text-center">
+            No Patients Folders to Display
+        </div>
+    }
+    else
+    {
+        <div class="row g-4" id="patientCardContainer">
+            @foreach (var patient in Model)
+            {
+                var folder = ((List<PatientFolder>)ViewBag.PatientFolders)
+                .FirstOrDefault(f => f.AppointmentId == patient.AppointmentId);
+
+                var emergency = ((List<EmergencyContact>)ViewBag.EmergencyContacts)
+                .FirstOrDefault(e => e.User.IdNumber == patient.IdNumber);
+
+                var treatment = ((List<Treatment>)ViewBag.Treatments)
+                .FirstOrDefault(t => t.Appointment.IdNumber == patient.IdNumber);
+
+
+                var vitals = ((List<PatientVitals>)ViewBag.Vitals)
+                .FirstOrDefault(v => folder != null && v.FolderId == folder.FolderId);
+
+                var discharge = ((List<DischargeInformation>)ViewBag.Discharges)
+                .FirstOrDefault(d => d.AppointmentId == patient.AppointmentId);
+
+                <div class="col-md-4 col-lg-3">
+                    <div class="card shadow-sm border-grey h-100 text-center p-3">
+                        <img src="@patient.DisplayImage" alt="@patient.FullName"
+                             class="rounded-circle mx-auto mb-3" style="width: 100px; height: 100px; object-fit: cover;" />
+                        <h5 class="fw-bold">@patient.FullName</h5>
+                        <p class="text-muted mb-1">@patient.Gender, @patient.Age years</p>
+                        <p class="text-muted mb-3">ID: @patient.IdNumber</p>
+
+                        <div class="d-flex justify-content-center gap-2">
+                            <button type="button" class="btn btn-primary btn-sm"
+                                    data-bs-toggle="modal" data-bs-target="#folderModal-@patient.AppointmentId">
+                                Open Folder
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Folder Details Modal -->
+                <div class="modal fade" id="folderModal-@patient.AppointmentId" tabindex="-1" aria-labelledby="folderModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                        <div class="modal-content">
+                            <div class="modal-header bg-primary text-white">
+                                <h5 class="modal-title" id="folderModalLabel">Folder Details - @patient.FullName</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+
+                                <!-- Folder Info -->
+                                <h6 class="text-primary fw-bold mb-2">Folder Information</h6>
+                                @if (folder != null)
+                                {
+                                    <div class="row mb-3">
+                                        <p><strong>Created By:</strong> @folder.CreatedBy</p>
+                                        <p><strong>Created Date:</strong> @folder.CreatedDate.ToString("dd MMM yyyy")</p>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <p class="text-muted">No folder information available.</p>
+                                }
+                                <hr />
+
+                                <!-- Patient Info -->
+                                <h6 class="text-primary fw-bold mb-2">Patient Information</h6>
+                                <p><strong>ID:</strong> @patient.IdNumber</p>
+                                <p><strong>Gender:</strong> @patient.Gender</p>
+                                <p><strong>Status:</strong> @patient.Status</p>
+                                <p><strong>Phone:</strong> @patient?.PhoneNumber</p>
+                                <p><strong>Address:</strong> @patient?.Address</p>
+                                                     
+                                <hr />
+
+                                <!-- Emergency Contact -->
+                                <h6 class="text-primary fw-bold mb-2">Emergency Contact</h6>
+                                @if (emergency != null)
+                                {
+                                    <p><strong>Name:</strong> @emergency.EmergencyName</p>
+                                    <p><strong>Phone:</strong> @emergency.EmergencyPhone</p>
+                                    <p><strong>Email:</strong> @emergency.EmergencyEmail</p>
+                                    <p><strong>Relationship:</strong> @emergency.EmergencyRelationship</p>
+                                }
+                                else
+                                {
+                                    <p class="text-muted">No emergency contact found.</p>
+                                }
+
+                                <hr />
+
+                                <!-- Latest Treatment -->
+                                <h6 class="text-primary fw-bold mb-2">Latest Treatment</h6>
+                                @if (treatment != null)
+                                {
+                                    <p><strong>Procedure:</strong> @treatment.Procedure</p>
+                                    <p><strong>Notes:</strong> @treatment.Notes</p>
+                                    <p><strong>Recorded By:</strong> @treatment.RecordedBy?.FullName</p>
+                                    <p><strong>Date:</strong> @treatment.TreatmentDate.ToString("dd MMM yyyy")</p>
+                                }
+                                else
+                                {
+                                    <p class="text-muted">No treatments recorded.</p>
+                                }
+
+                                <hr />
+
+                                <!-- Latest Vitals -->
+                                <h6 class="text-primary fw-bold mb-2">Latest Vitals</h6>
+                                @if (vitals != null)
+                                {
+                                    <p><strong>Blood Pressure:</strong> @vitals.BloodPressure</p>
+                                    <p><strong>Heart Rate:</strong> @vitals.HeartRate bpm</p>
+                                    <p><strong>Temperature:</strong> @vitals.Temperature °C</p>
+                                    <p><strong>O₂ Saturation:</strong> @vitals.OxygenSaturation %</p>
+                                }
+                                else
+                                {
+                                    <p class="text-muted">No vitals recorded.</p>
+                                }
+
+                                <hr />
+
+                                <!-- Latest Discharge -->
+                                <h6 class="text-primary fw-bold mb-2">Latest Discharge</h6>
+                                @if (discharge != null)
+                                {
+                                    <p><strong>Discharged By:</strong> @discharge.DischargedBy?.FullName</p>
+                                    <p><strong>Summary:</strong> @discharge.DischargeSummary</p>
+                                    <p><strong>Date:</strong> @discharge.DischargeDate.ToString("dd MMM yyyy")</p>
+                                }
+                                else
+                                {
+                                    <p class="text-muted">No discharge information available.</p>
+                                }
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+    }
+    <!-- Back Button -->
+    <div class="text-center mt-4">
+        <a asp-action="Index" asp-controller="Doctor" class="btn btn-secondary px-4">
+            <i class="bi bi-arrow-left-circle me-1"></i> Back to Dashboard
+        </a>
+    </div>
+</div>
+@section Scripts {
+    <script>
+        document.getElementById("searchInput").addEventListener("keyup", function () {
+            const searchValue = this.value.toLowerCase().trim();
+            const cards = document.querySelectorAll("#patientCardContainer .card");
+
+            cards.forEach(card => {
+                const name = card.querySelector("h5")?.innerText.toLowerCase() || "";
+                const id = card.querySelector("p.text-muted.mb-3")?.innerText.toLowerCase() || "";
+
+                if (name.includes(searchValue) || id.includes(searchValue)) {
+                    card.parentElement.style.display = ""; // show the card
+                } else {
+                    card.parentElement.style.display = "none"; // hide the card
+                }
+            });
+        });
+    </script>
+}
+
+

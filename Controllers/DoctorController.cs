@@ -1,14 +1,15 @@
 ﻿using System.Security.Claims;
+using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Ward_Management_System.Data;
+using Ward_Management_System.DTOs;
 using Ward_Management_System.Models;
 using Ward_Management_System.ViewModels;
-using Ward_Management_System.DTOs;
-using System.Text.Json;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace Ward_Management_System.Controllers
 {
@@ -43,7 +44,7 @@ namespace Ward_Management_System.Controllers
                                             on ad.AppointmentId equals ap.AppointmentId
                                         join w in _context.wards
                                             on ad.WardId equals w.WardId
-                                        where ad.Status == "Admitted"
+                                        where ad.Status == "Admitted" || ad.Status == "Ready To Be Discharged"
                                         select new AdmissionViewModel
                                         {
                                             AdmissionId = ad.AdmissionId,
@@ -426,6 +427,14 @@ namespace Ward_Management_System.Controllers
             }
 
             appointment.Status = "Ready To Be Discharged";
+
+            var admission = await _context.Admissions
+                                 .FirstOrDefaultAsync(a => a.AppointmentId == appointment.AppointmentId);
+            if (admission != null)
+            {
+                
+                admission.Status = "Ready To Be Discharged";
+            }
 
             var doctorId = _userManager.GetUserId(User);
 
@@ -890,9 +899,91 @@ namespace Ward_Management_System.Controllers
         }
 
 
+        [Authorize(Roles = "Doctor,Admin")]
+        public async Task<IActionResult> PatientFolders()
+        {
+            var doctorId = _userManager.GetUserId(User);
 
+            // Get all patients who have folders (for this doctor)
+            var patients = (await _context.Admissions
+                 .Include(a => a.Appointment)
+                     .ThenInclude(appt => appt.User)
+                 .Where(a => a.FolderStatus == "Has Folder" &&
+                             (User.IsInRole("Admin") || a.Appointment.DoctorId == doctorId))
+                 .ToListAsync())  // bring data to memory
+                 .GroupBy(a => a.Appointment.IdNumber)
+                 .Select(g => g.OrderByDescending(a => a.AdmissionDate).FirstOrDefault())
+                 .Select(a => new PatientFolderVM
+                 {
+                     AppointmentId = a.AppointmentId,
+                     FullName = a.Appointment.FullName,
+                     Age = a.Appointment.Age,
+                     Gender = a.Appointment.Gender,
+                     IdNumber = a.Appointment.IdNumber,
+                     ProfileImagePath = a.Appointment.User.ProfileImagePath,
+                     Status = a.Appointment.Status,
+                     PhoneNumber = a.Appointment.User.PhoneNumber,
+                     Address = a.Appointment.User.Address
+                 })
+                 .ToList();
 
+            // Attach latest info for modal (ViewBags)
+            ViewBag.PatientFolders = await _context.PatientFolder
+                .Include(f => f.Appointment)
+                .ThenInclude(a => a.User)
+                .ToListAsync();
 
+            ViewBag.Treatments = await _context.Treatment
+                .Include(t => t.Appointment)
+                .Include(t => t.RecordedBy)
+                .GroupBy(t => t.AppointmentId)
+                .Select(g => g.OrderByDescending(t => t.TreatmentDate).FirstOrDefault())
+                .ToListAsync();
+
+            ViewBag.Vitals = await _context.PatientVitals
+                .GroupBy(v => v.FolderId)
+                .Select(g => g.OrderByDescending(v => v.VitalsDate).FirstOrDefault())
+                .ToListAsync();
+
+            ViewBag.Discharges = await _context.DischargeInformation
+                .Include(d => d.Appointment)
+                .Include(d => d.DischargedBy)
+                .GroupBy(d => d.AppointmentId)
+                .Select(g => g.OrderByDescending(d => d.DischargeDate).FirstOrDefault())
+                .ToListAsync();
+
+            ViewBag.EmergencyContacts = await _context.EmergencyContacts
+                .Include(e => e.User)
+                .ToListAsync();
+
+            return View(patients);
+        }
+
+        [Authorize(Roles = "Doctor")]
+        public async Task<IActionResult> AdministeredPrescriptions(int pg =1)
+        {
+            var doctorId = _userManager.GetUserId(User);
+
+            var prescriptions = _context.PrescribedMedications
+                .Include(pm => pm.Prescription)
+                    .ThenInclude(p => p.Appointment)
+                .Include(pm => pm.StockMedications)
+                .Where(pm => pm.Prescription.PrescribedById == doctorId && pm.IsDispensed);
+
+            // Pagination
+            const int pageSize = 5;
+            if (pg < 1) pg = 1;
+
+            int recsCount = await prescriptions.CountAsync();
+            var pager = new Pager(recsCount, pg, pageSize);
+            int recSkip = (pg - 1) * pageSize;
+
+            var data = await prescriptions.Skip(recSkip).Take(pageSize).ToListAsync();
+
+            ViewBag.Pager = pager;
+
+            return View(data);
+        }
 
     }
 }

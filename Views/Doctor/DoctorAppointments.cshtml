@@ -134,6 +134,7 @@
                         <table class="table table-striped table-hover align-middle" id="patientTable">
                             <thead class="table-success">
                                 <tr>
+                                    <th>#</th>
                                     <th>Patient Name</th>
                                     <th>Age</th>
                                     <th>Gender</th>
@@ -152,6 +153,7 @@
                                 @foreach (var appt in Model)
                                 {
                                     <tr>
+                                        <td>@count</td>
                                         <td>@appt.FullName</td>
                                         <td>@CalculateAgeFromId(appt.IdNumber)</td>
                                         <td>@appt.Gender</td>
