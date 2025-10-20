@@ -5,7 +5,7 @@
     ViewData["Title"] = "Admission List";
     Layout = "~/Views/Shared/_UserLayout.cshtml";
 
-     Pager pager = new Pager();
+    Pager pager = new Pager();
     int pageNo = 0;
     if (ViewBag.Pager != null)
     {
@@ -41,9 +41,9 @@
             <p class="text-muted">View and create patient folders.</p>
         </div>
     </div>
-<!-- Filter Form -->
-<form method="get" asp-action="ViewAdmissions" class="row justify-content-center mb-4">
-    <!-- Location Filter -->
+    <!-- Filter Form -->
+    <form method="get" asp-action="ViewAdmissions" class="row justify-content-center mb-4">
+        <!-- Location Filter -->
         <div class="col-md-2">
             <select class="form-select" name="locationFilter">
                 <option value="">All Locations</option>
@@ -78,7 +78,7 @@
             </select>
         </div>
 
-    <!-- Search by Name or ID -->
+        <!-- Search by Name or ID -->
         <div class="col-md-3">
             <input type="text" class="form-control" name="searchTerm" placeholder="Search by Name or ID"
                    value="@(ViewBag.CurrentFilters?.searchTerm ?? "")" />
@@ -97,7 +97,7 @@
             </a>
 
         </div>
-</form>
+    </form>
 
     <!-- Admissions Table -->
     <div class="row">
@@ -112,62 +112,62 @@
                 else
                 {
                     <div class="card-body">
-                            <table class="table table-hover align-middle" id="AdmissionTable">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th>#</th>
-                                        <th>Patient Name</th>
-                                        <th>ID Number</th>
-                                        <th>Location</th>
-                                        <th>Folder Status</th>
-                                        <th>Condition</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @{
+                        <table class="table table-hover table-striped mb-0 align-middle" id="AdmissionTable">
+                            <thead class="table-primary">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Patient Name</th>
+                                    <th>ID Number</th>
+                                    <th>Location</th>
+                                    <th>Folder Status</th>
+                                    <th>Condition</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @{
                                     int count = ((pager.CurrentPage - 1) * pager.PageSize) + 1;
-                                    }
-                                    @foreach (var admission in Model)
-                                    {
-                                        <tr>
-                                            <td>@count</td>
-                                            <td>@admission.PatientName</td>
-                                            <td>@admission.IdNumber</td>
-                                            <td>@admission.WardName</td>
-                                            <td>
-                                                @if (admission.FolderStatus == "No Folder")
-                                                {
-                                                    <span class="badge bg-success">No Folder</span>
-                                                }
-                                                else
-                                                {
-                                                    <span class="badge bg-secondary">Has Folder</span>
-                                                }
-                                            </td>
-                                            <td>@admission.Condition</td>
-                                            <td>
-                                                @if (admission.FolderStatus == "No Folder")
-                                                {
-                                                    <form asp-action="CreateFolder" asp-controller="WardAdmin" method="post">
-                                                        <input type="hidden" name="appointmentId" value="@admission.AppointmentId" />
-                                                        <button type="submit" class="btn btn-sm btn-primary">
-                                                            <i class="bi bi-folder-plus"></i> Create Folder
-                                                        </button>
-                                                    </form>
-                                                }
-                                                else
-                                                {
-                                                    <button type="button" class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#folderModal-@admission.AppointmentId">
-                                                        <i class="bi bi-folder2-open"></i> Open Folder
+                                }
+                                @foreach (var admission in Model)
+                                {
+                                    <tr>
+                                        <td>@count</td>
+                                        <td>@admission.PatientName</td>
+                                        <td>@admission.IdNumber</td>
+                                        <td>@admission.WardName</td>
+                                        <td>
+                                            @if (admission.FolderStatus == "No Folder")
+                                            {
+                                                <span class="badge bg-success">No Folder</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary">Has Folder</span>
+                                            }
+                                        </td>
+                                        <td>@admission.Condition</td>
+                                        <td>
+                                            @if (admission.FolderStatus == "No Folder")
+                                            {
+                                                <form asp-action="CreateFolder" asp-controller="WardAdmin" method="post">
+                                                    <input type="hidden" name="appointmentId" value="@admission.AppointmentId" />
+                                                    <button type="submit" class="btn btn-sm btn-primary">
+                                                        <i class="bi bi-folder-plus"></i> Create Folder
                                                     </button>
-                                                }
-                                            </td>
-                                        </tr>
-                                        count++;
-                                    }
-                                </tbody>
-                            </table>
+                                                </form>
+                                            }
+                                            else
+                                            {
+                                                <button type="button" class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#folderModal-@admission.AppointmentId">
+                                                    <i class="bi bi-folder2-open"></i> Open Folder
+                                                </button>
+                                            }
+                                        </td>
+                                    </tr>
+                                    count++;
+                                }
+                            </tbody>
+                        </table>
                         <!-- Folder Modals -->
                         @foreach (var admission in Model)
                         {
@@ -301,7 +301,7 @@
                             </div>
                         }
 
-                          @*  Paging shared partial view *@
+                        @*  Paging shared partial view *@
                         <div class="=container">
                             @if (pager.TotalPages > 0)
                             {
@@ -339,7 +339,7 @@
         </div>
     </div>
 
-    
+
 
     <!-- Back Button -->
     <div class="text-center mt-4">
@@ -351,7 +351,7 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-      <script>
+    <script>
         document.addEventListener("DOMContentLoaded", function () {
             var toastEl = document.getElementById("toastMessage");
             if (toastEl) {

@@ -24,13 +24,14 @@
                 <div class="card-body p-4">
                     <div class="table-responsive">
                         <table class="table table-hover align-middle table-bordered" id="hospitalInfoTable">
-                            <thead class="table-light text-center text-uppercase small">
+                            <thead class="table-primary text-center text-uppercase small">
                                 <tr>
                                     <th>Name</th>
                                     <th>Address</th>
                                     <th>Contact No.</th>
                                     <th>Email</th>
                                     <th>Website</th>
+                                    <th>Departments</th>
                                     <th>Operating Hours</th>
                                 </tr>
                             </thead>
@@ -43,6 +44,28 @@
                                         <td>@hospitalInfo.ContactNumber</td>
                                         <td><a href="mailto:@hospitalInfo.Email">@hospitalInfo.Email</a></td>
                                         <td><a href="@hospitalInfo.Website" target="_blank">@hospitalInfo.Website</a></td>
+                                        <td>
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button"
+                                                        id="departmentDropdown-@hospitalInfo.Id"
+                                                        data-bs-toggle="dropdown" aria-expanded="false">
+                                                    View Departments
+                                                </button>
+                                                <ul class="dropdown-menu shadow-sm rounded" aria-labelledby="departmentDropdown-@hospitalInfo.Id">
+                                                    @if (hospitalInfo.Departments != null && hospitalInfo.Departments.Any())
+                                                    {
+                                                        foreach (var department in hospitalInfo.Departments)
+                                                        {
+                                                            <li><span class="dropdown-item">@department.DepartmentName</span></li>
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        <li><span class="dropdown-item text-muted">No Departments</span></li>
+                                                    }
+                                                </ul>
+                                            </div>
+                                        </td>
                                         <td>@hospitalInfo.OperatingHours</td>
                                     </tr>
                                 }

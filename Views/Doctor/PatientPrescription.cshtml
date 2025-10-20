@@ -27,13 +27,52 @@
             <p>Select Patient & Prescribe Medication</p>
         </div>
     </div>
-
-    @* Live Searching  *@
-    <div class="row mb-4">
-        <div class="col-md-6 offset-md-3">
-            <input type="text" id="searchInput" class="form-control shadow-sm" placeholder=" 🔍 Search by name, or ID...">
+    <!-- Filtering Options Row -->
+    <div class="row justify-content-center align-items-center mb-4 gx-3">
+        <!-- Gender Filter -->
+        <div class="col-md-2">
+            <select class="form-select" id="genderFilter">
+                <option value="" disabled selected hidden>-- Select Gender --</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+            </select>
         </div>
+
+        <!-- Age Group Filter -->
+        <div class="col-md-2">
+            <select class="form-select" id="ageFilter">
+                <option value="" disabled selected hidden>-- Select Age Group --</option>
+                <option value="young">Under 30</option>
+                <option value="middle">30-50</option>
+                <option value="senior">50+</option>
+            </select>
+        </div>
+
+
+        <!-- Search Input -->
+        <div class="col-md-4">
+            <div class="input-group">
+                <span class="input-group-text bg-white">
+                    <i class="bi bi-search text-muted"></i>
+                </span>
+                <input type="text" class="form-control" id="patientSearch" placeholder="Search by name or ID number...">
+                <button class="btn btn-outline-secondary" type="button" id="clearFilters">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+        </div>
+        <!-- Export PDF Button -->
+        <div class="col-md-2 text-end">
+            <button class="btn btn-danger w-100 d-flex align-items-center justify-content-center" id="exportPDF">
+                <i class="bi bi-file-earmark-pdf-fill me-2"></i> Export PDF
+            </button>
+        </div>
+
+
     </div>
+
+
 
 
 
@@ -47,8 +86,8 @@
                 else
                 {
                     <div class="card-body">
-                        <table class="table table-hover align-middle" id="MyPatientsTable">
-                            <thead class="table-dark">
+                        <table class="table table-hover table-striped mb-0 align-middle" id="MyPatientsTable">
+                            <thead class="table-primary">
                                 <tr>
                                     <th>Full Name</th>
                                     <th>ID Number</th>
@@ -104,26 +143,175 @@
         </div>
     </div>
 </div>
-@section Scripts{
+@section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
     <script>
-         //Live Searching
-        document.getElementById("searchInput").addEventListener("keyup", function () {
-        const searchValue = this.value.toLowerCase();
-        const rows = document.querySelectorAll("#MyPatientsTable tbody tr");
+        document.addEventListener("DOMContentLoaded", function () {
+            const toastEl = document.getElementById("toastMessage");
+            if (toastEl) new bootstrap.Toast(toastEl).show();
 
-         rows.forEach(row => {
-        const rowText = row.innerText.toLowerCase();
-        row.style.display = rowText.includes(searchValue) ? "" : "none";
-        });
-        });
+            const searchInput = document.getElementById("patientSearch");
+            const genderFilter = document.getElementById("genderFilter");
+            const ageFilter = document.getElementById("ageFilter");
+            const clearBtn = document.getElementById("clearFilters");
+            const tableRows = document.querySelectorAll("#MyPatientsTable tbody tr");
 
-          document.addEventListener("DOMContentLoaded", function () {
-            var toastEl = document.getElementById("toastMessage");
-            if (toastEl) {
-                var toast = new bootstrap.Toast(toastEl);
-                toast.show();
+            function applyFilters() {
+                const searchValue = searchInput.value.toLowerCase();
+                const selectedGender = genderFilter.value;
+                const selectedAgeGroup = ageFilter.value;
+
+                tableRows.forEach(row => {
+                    const name = row.cells[0]?.textContent.toLowerCase() || "";
+                    const id = row.cells[1]?.textContent.toLowerCase() || "";
+                    const age = parseInt(row.cells[2]?.textContent.trim()) || 0;
+                    const gender = row.cells[3]?.textContent.trim();
+
+                    const matchesSearch = name.includes(searchValue) || id.includes(searchValue);
+                    const matchesGender = !selectedGender || gender === selectedGender;
+
+                    let matchesAge = true;
+                    if (selectedAgeGroup === "young") matchesAge = age < 30;
+                    else if (selectedAgeGroup === "middle") matchesAge = age >= 30 && age <= 50;
+                    else if (selectedAgeGroup === "senior") matchesAge = age > 50;
+
+                    row.style.display = (matchesSearch && matchesGender && matchesAge) ? "" : "none";
+                });
             }
+
+            searchInput.addEventListener("input", applyFilters);
+            genderFilter.addEventListener("change", applyFilters);
+            ageFilter.addEventListener("change", applyFilters);
+            clearBtn.addEventListener("click", () => {
+                searchInput.value = "";
+                genderFilter.selectedIndex = 0;
+                ageFilter.selectedIndex = 0;
+                applyFilters();
+            });
+
+            // Export PDF
+            document.getElementById("exportPDF").addEventListener("click", function () {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+
+                const table = document.getElementById("MyPatientsTable");
+
+                const headers = [];
+                table.querySelectorAll("thead tr th").forEach(th => {
+                    if (th.textContent.trim() !== "Actions") {
+                        headers.push(th.textContent.trim());
+                    }
+                });
+
+                const bodyData = [];
+                table.querySelectorAll("tbody tr").forEach(row => {
+                    if (row.style.display !== "none") {
+                        const rowData = [];
+                        for (let i = 0; i < row.cells.length - 1; i++) {
+                            rowData.push(row.cells[i].textContent.trim());
+                        }
+                        bodyData.push(rowData);
+                    }
+                });
+
+                const logo = new Image();
+                logo.src = '/images/logo.png';
+
+                logo.onload = function () {
+                    doc.addImage(logo, 'PNG', 14, 10, 30, 30);
+
+                    doc.setFontSize(16);
+                    doc.setTextColor(40);
+                    doc.text("Patient Prescriptions Report", 105, 20, { align: "center" });
+
+                    doc.setFontSize(10);
+                    const now = new Date();
+                    const timestamp = now.toLocaleString();
+                    doc.text(`Generated: ${timestamp}`, 105, 28, { align: "center" });
+
+                    let filtersText = "";
+                    const gender = genderFilter.value;
+                    const age = ageFilter.value;
+                    const search = searchInput.value;
+                    if (gender || age || search) {
+                        filtersText = "Filters Applied: ";
+                        if (gender) filtersText += `Gender = ${gender} `;
+                        if (age) filtersText += `| Age = ${age} `;
+                        if (search) filtersText += `| Search = "${search}"`;
+                        doc.text(filtersText.trim(), 14, 40);
+                    }
+
+                    doc.autoTable({
+                        head: [headers],
+                        body: bodyData,
+                        startY: filtersText ? 48 : 44,
+                        styles: { fontSize: 10, cellPadding: 3 },
+                        headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] },
+                        theme: 'grid',
+                        margin: { left: 14, right: 14 },
+                        didDrawPage: function (data) {
+                            const pageHeight = doc.internal.pageSize.getHeight();
+                            doc.setFontSize(9);
+                            doc.setTextColor(150);
+                            doc.text('Generated by Ward Management System © 2025', doc.internal.pageSize.getWidth() / 2, pageHeight - 10, { align: "center" });
+                        }
+                    });
+
+                    const finalY = doc.lastAutoTable.finalY + 10;
+                    doc.setFontSize(11);
+                    doc.text(`Total Patients: ${bodyData.length}`, 14, finalY);
+
+                    doc.save("MyPatientsList.pdf");
+                };
+
+                logo.onerror = function () {
+                    doc.setFontSize(16);
+                    doc.setTextColor(40);
+                    doc.text("Patient Prescriptions Report", 105, 20, { align: "center" });
+
+                    doc.setFontSize(10);
+                    const now = new Date();
+                    const timestamp = now.toLocaleString();
+                    doc.text(`Generated: ${timestamp}`, 105, 28, { align: "center" });
+
+                    let filtersText = "";
+                    const gender = genderFilter.value;
+                    const age = ageFilter.value;
+                    const search = searchInput.value;
+                    if (gender || age || search) {
+                        filtersText = "Filters Applied: ";
+                        if (gender) filtersText += `Gender = ${gender} `;
+                        if (age) filtersText += `| Age = ${age} `;
+                        if (search) filtersText += `| Search = "${search}"`;
+                        doc.text(filtersText.trim(), 14, 40);
+                    }
+
+                    doc.autoTable({
+                        head: [headers],
+                        body: bodyData,
+                        startY: filtersText ? 48 : 44,
+                        styles: { fontSize: 10, cellPadding: 3 },
+                        headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] },
+                        theme: 'grid',
+                        margin: { left: 14, right: 14 },
+                        didDrawPage: function (data) {
+                            const pageHeight = doc.internal.pageSize.getHeight();
+                            doc.setFontSize(9);
+                            doc.setTextColor(150);
+                            doc.text('Generated by Ward Management System © 2025', doc.internal.pageSize.getWidth() / 2, pageHeight - 10, { align: "center" });
+                        }
+                    });
+
+                    const finalY = doc.lastAutoTable.finalY + 10;
+                    doc.setFontSize(11);
+                    doc.text(`Total Patients: ${bodyData.length}`, 14, finalY);
+
+                    doc.save("MyPatientsList.pdf");
+                };
+            });
         });
     </script>
 }

@@ -3,7 +3,7 @@
     ViewData["Title"] = "View Instructions";
     Layout = "~/Views/Shared/_UserLayout.cshtml";
 
-      Pager pager = new Pager();
+    Pager pager = new Pager();
     int pageNo = 0;
     if (ViewBag.Pager != null)
     {
@@ -20,14 +20,14 @@
         </div>
     </div>
 
-     @* Live Searching  *@
+    @* Live Searching  *@
     <div class="row mb-4">
         <div class="col-md-6 offset-md-3">
             <input type="text" id="searchInput" class="form-control shadow-sm" placeholder="Search by name, age, or ID...">
         </div>
     </div>
 
-    <div  class="row">
+    <div class="row">
         <div class="col-md-10 offset-md-1">
             <div class="card shadow-sm">
                 @if (!Model.Any())
@@ -39,25 +39,25 @@
                 else
                 {
                     <div class="card-body">
-                    <table class="table table-hover align-middle" id="InstructionsTable">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>#</th>
-                                <th>Name</th>
-                                <th>ID Number</th>
-                                <th>Age</th>
-                                <th>Gender</th>
-				                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                        <table class="table table-hover table-striped mb-0 align-middle" id="InstructionsTable">
+                            <thead class="table-primary">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Name</th>
+                                    <th>ID Number</th>
+                                    <th>Age</th>
+                                    <th>Gender</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
                                 @{
                                     int count = ((pager.CurrentPage - 1) * pager.PageSize) + 1;
                                 }
-                            @foreach (var patient in Model)
-                            {
-                                <tr>
-                                    <td>@count</td>
+                                @foreach (var patient in Model)
+                                {
+                                    <tr>
+                                        <td>@count</td>
                                         <td>
                                             @patient.FullName
                                             @if (patient.IsRecent)
@@ -67,45 +67,45 @@
 
                                         </td>
 
-                                    <td>@patient.IdNumber</td>
-					                <td>@patient.Age</td>
-                                    <td>@patient.Gender</td>
-                                    <td>
-                                        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#instructionsModal_@patient.AppointmentId">
-                                            View
-                                        </button>
+                                        <td>@patient.IdNumber</td>
+                                        <td>@patient.Age</td>
+                                        <td>@patient.Gender</td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#instructionsModal_@patient.AppointmentId">
+                                                View
+                                            </button>
 
-                                    </td>
+                                        </td>
                                     </tr>
                                     count++;
 
-                                <!-- Modal -->
-                                <div class="modal fade" id="instructionsModal_@patient.AppointmentId" tabindex="-1" aria-labelledby="label_@patient.AppointmentId" aria-hidden="true">
-                                    <div class="modal-dialog modal-lg">
-                                        <div class="modal-content shadow-sm">
-                                            <div class="modal-header bg-primary text-white">
-                                                <h5 class="modal-title" id="label_@patient.AppointmentId">Latest Instruction for @patient.FullName</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                @if (!string.IsNullOrEmpty(patient.Procedure))
-                                                {
-                                                    <p><strong>Date:</strong> @patient.TreatmentDate?.ToString("dd MMM yyyy")</p>
-                                                    <p><strong>Procedure:</strong> @patient.Procedure</p>
-                                                    <p><strong>Instructions:</strong> @patient.Notes</p>
-                                                    <p><strong>Doctor:</strong> @patient.DoctorName</p>
-                                                }
-                                                else
-                                                {
-                                                    <p class="text-muted">No instructions available.</p>
-                                                }
+                                    <!-- Modal -->
+                                    <div class="modal fade" id="instructionsModal_@patient.AppointmentId" tabindex="-1" aria-labelledby="label_@patient.AppointmentId" aria-hidden="true">
+                                        <div class="modal-dialog modal-lg">
+                                            <div class="modal-content shadow-sm">
+                                                <div class="modal-header bg-primary text-white">
+                                                    <h5 class="modal-title" id="label_@patient.AppointmentId">Latest Instruction for @patient.FullName</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    @if (!string.IsNullOrEmpty(patient.Procedure))
+                                                    {
+                                                        <p><strong>Date:</strong> @patient.TreatmentDate?.ToString("dd MMM yyyy")</p>
+                                                        <p><strong>Procedure:</strong> @patient.Procedure</p>
+                                                        <p><strong>Instructions:</strong> @patient.Notes</p>
+                                                        <p><strong>Doctor:</strong> @patient.DoctorName</p>
+                                                    }
+                                                    else
+                                                    {
+                                                        <p class="text-muted">No instructions available.</p>
+                                                    }
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            }
-                        </tbody>
-                    </table>
+                                }
+                            </tbody>
+                        </table>
                         @*  Paging shared partial view *@
                         <div class="=container">
                             @if (pager.TotalPages > 0)
@@ -143,7 +143,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Back Button -->
     <div class="text-center mt-4">
         <a asp-action="Index" asp-controller="Nurse" class="btn btn-secondary px-4">
@@ -151,8 +151,8 @@
         </a>
     </div>
 </div>
-@section Scripts{
-    <partial name="_ValidationScriptsPartial"/>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
     <script>
               document.addEventListener("DOMContentLoaded", function () {
             // Live searching

@@ -83,8 +83,8 @@ namespace Ward_Management_System.Controllers
             {
                 await _userManager.AddToRoleAsync(staffUser, model.Role);
                 TempData["ToastMessage"] = "Successfully Added!";
-                TempData["ToastType"] = "success"; 
-                return RedirectToAction("StaffList"); 
+                TempData["ToastType"] = "success";
+                return RedirectToAction("StaffList");
             }
 
             foreach (var error in result.Errors)
@@ -318,7 +318,7 @@ namespace Ward_Management_System.Controllers
                 TempData["ToastType"] = "success";
                 return RedirectToAction("StaffList");
             }
-               
+
 
             foreach (var error in result.Errors)
                 ModelState.AddModelError("", error.Description);
@@ -335,7 +335,7 @@ namespace Ward_Management_System.Controllers
         {
             if (string.IsNullOrEmpty(id)) return NotFound();
 
-            var user = await _userManager.FindByIdAsync(id); 
+            var user = await _userManager.FindByIdAsync(id);
 
             if (user != null)
             {
@@ -346,7 +346,7 @@ namespace Ward_Management_System.Controllers
                 await _context.SaveChangesAsync();
             }
 
-            return RedirectToAction(nameof(StaffList)); 
+            return RedirectToAction(nameof(StaffList));
         }
 
         [Authorize(Roles = "Admin")]
@@ -657,7 +657,7 @@ namespace Ward_Management_System.Controllers
             var pager = new Pager(recsCount, pg, pageSize);
             int recSkip = (pg - 1) * pageSize;
             var data = staffList.Skip(recSkip).Take(pageSize).ToList();
-           
+
             ViewBag.Pager = pager;
             ViewBag.CurrentGender = gender;
             ViewBag.CurrentAgeGroup = ageGroup;

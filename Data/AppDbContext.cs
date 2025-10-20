@@ -12,6 +12,7 @@ namespace Ward_Management_System.Data
         //public DbSet<Users> User { get; set; }
         public DbSet<Admissions> Admissions { get; set; }
         public DbSet<Appointment> Appointments { get; set; }
+        public DbSet<Departments> departments { get; set; }
         public DbSet<DischargeInformation> DischargeInformation { get; set; }
         public DbSet<DispensedMedication> DispensedMedications { get; set; }
         public DbSet<EmergencyContact> EmergencyContacts { get; set; }

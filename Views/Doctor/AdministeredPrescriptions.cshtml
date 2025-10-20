@@ -25,29 +25,31 @@
     <div class="row">
         <div class="col-md-10 offset-md-1">
             <div class="card shadow-sm">
-                 @if (!Model.Any())
+                @if (!Model.Any())
                 {
                     <div class="alert alert-info">You have no Completed/Administered prescriptions.</div>
                 }
                 else
-                {<div class="card-header d-flex justify-content-between align-items-center bg-light">
-                    <h5 class="mb-0 fw-semibold text-dark">Administered Prescriptions List</h5>
-                    <a asp-action="ExportAdministeredPrescriptionsPDF" asp-controller="Reports"
-                       class="btn btn-success shadow-sm">
-                        <i class="bi bi-file-earmark-pdf"></i> Export to PDF
-                    </a>
-                </div>
+                {
+
+                    <div class="card-header d-flex justify-content-between align-items-center bg-light">
+                        <h5 class="mb-0 fw-bold text-dark">Administered Prescriptions List</h5>
+                        <a asp-action="ExportAdministeredPrescriptionsPDF" asp-controller="Reports"
+                           class="btn btn-success shadow-sm">
+                            <i class="bi bi-file-earmark-pdf"></i> Export to PDF
+                        </a>
+                    </div>
 
                     <div class="card-body">
-                        <table class="table table-hover align-middle mb-0" id="CompletedPrescriptionsTable">
-                            <thead class="table-dark">
+                        <table class="table table-hover table-striped mb-0 align-middle" id="CompletedPrescriptionsTable">
+                            <thead class="table-primary">
                                 <tr>
                                     <th>#</th>
                                     <th>Medication</th>
                                     <th>Dosage</th>
                                     <th>Patient</th>
                                     <th>Date Prescribed</th>
-                                  
+
                                 </tr>
                             </thead>
                             <tbody>
@@ -62,7 +64,7 @@
                                         <td>@item.Dosage</td>
                                         <td>@item.Prescription?.Appointment?.FullName</td>
                                         <td>@item.Prescription?.PrescribedDate.ToString("dd/MM/yyyy")</td>
-                                        
+
                                     </tr>
                                     count++;
                                 }
@@ -106,8 +108,8 @@
         </div>
         <!-- Back Button -->
         <div class="text-center mt-4">
-            <a asp-action="Index" asp-controller="Doctor" class="btn btn-secondary px-4">
-                <i class="bi bi-arrow-left-circle me-1"></i> Back to Dashboard
+            <a asp-action="MyPrescriptions" asp-controller="Doctor" class="btn btn-secondary px-4">
+                <i class="bi bi-arrow-left-circle me-1"></i> Back
             </a>
         </div>
     </div>

@@ -38,7 +38,7 @@ namespace Ward_Management_System.Controllers
             }
             var result = await signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: false);
             //Checking if login is successful
-            if (result.Succeeded)                            
+            if (result.Succeeded)
             {
                 var user = await userManager.FindByEmailAsync(model.Email);
                 var roles = await userManager.GetRolesAsync(user);
@@ -120,7 +120,7 @@ namespace Ward_Management_System.Controllers
                 await signInManager.SignInAsync(user, isPersistent: false);
                 return RedirectToAction("Login", "Account");
             }
-            foreach(var error in result.Errors)
+            foreach (var error in result.Errors)
             {
                 ModelState.AddModelError(string.Empty, error.Description);
             }
@@ -144,7 +144,7 @@ namespace Ward_Management_System.Controllers
             }
             var user = await userManager.FindByEmailAsync(model.Email);
 
-            if(user == null)
+            if (user == null)
             {
                 ModelState.AddModelError("", "User not found!");
                 return View(model);
@@ -227,7 +227,7 @@ namespace Ward_Management_System.Controllers
             }
 
             var user = await userManager.FindByNameAsync(model.Email);
-            if(user == null)
+            if (user == null)
             {
                 ModelState.AddModelError("", "User not found.");
                 return View(model);
@@ -240,7 +240,7 @@ namespace Ward_Management_System.Controllers
             }
             else
             {
-                foreach(var error in result.Errors)
+                foreach (var error in result.Errors)
                 {
                     ModelState.AddModelError("", error.Description);
                 }
@@ -262,7 +262,6 @@ namespace Ward_Management_System.Controllers
             return View(new UpdatePasswordViewModel());
         }
 
-        // POST: Update Password
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize]
@@ -271,13 +270,12 @@ namespace Ward_Management_System.Controllers
             if (!ModelState.IsValid)
             {
                 var errors = ModelState.Values.SelectMany(v => v.Errors)
-                                      .Select(e => e.ErrorMessage)
-                                      .ToList();
+                                              .Select(e => e.ErrorMessage)
+                                              .ToList();
 
                 string detailedErrors = string.Join("<br/>", errors);
-
                 TempData["ToastMessage"] = $"Unable to update password. {detailedErrors}";
-                TempData["ToastType"] = "Error";
+                TempData["ToastType"] = "danger"; // Fixed from "Error"
                 return View(model);
             }
 
@@ -287,22 +285,33 @@ namespace Ward_Management_System.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
+            // ✅ Check if new password is same as old
+            var passwordHasher = new PasswordHasher<IdentityUser>();
+            var verificationResult = passwordHasher.VerifyHashedPassword(user, user.PasswordHash, model.NewPassword);
+
+            if (verificationResult == PasswordVerificationResult.Success)
+            {
+                TempData["ToastMessage"] = "New password must be different from the current password.";
+                TempData["ToastType"] = "danger";
+                return View(model);
+            }
+
             var result = await userManager.ChangePasswordAsync(user, model.OldPassword, model.NewPassword);
 
             if (result.Succeeded)
             {
                 TempData["ToastMessage"] = "Your password has been changed successfully.";
-                TempData["ToastType"] = "Success";
-                return RedirectToAction("UpdatePassword", "Account"); // or Dashboard
+                TempData["ToastType"] = "success";
+                return RedirectToAction("UpdatePassword");
             }
 
+            // Handle Identity errors
             var errorMessages = result.Errors.Select(e => e.Description).ToList();
             string combinedErrors = string.Join("<br/>", errorMessages);
 
             TempData["ToastMessage"] = $"Failed to change password. {combinedErrors}";
             TempData["ToastType"] = "danger";
 
-            // Optional: also keep ModelState errors visible in case toast disappears quickly
             foreach (var error in result.Errors)
             {
                 ModelState.AddModelError("", error.Description);
@@ -310,6 +319,7 @@ namespace Ward_Management_System.Controllers
 
             return View(model);
         }
+
 
 
         [HttpPost]
@@ -332,7 +342,7 @@ namespace Ward_Management_System.Controllers
 
             return role switch
             {
-                "Admin" => RedirectToAction("Admin", "Admin"), 
+                "Admin" => RedirectToAction("Admin", "Admin"),
                 "Doctor" => RedirectToAction("Index", "Doctor"),
                 "WardAdmin" => RedirectToAction("Index", "WardAdmin"),
                 "Nurse" => RedirectToAction("Index", "Nurse"),

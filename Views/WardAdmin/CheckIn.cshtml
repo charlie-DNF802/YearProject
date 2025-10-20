@@ -95,13 +95,13 @@
                     <div class="alert alert-info text-center col-md-8 mx-auto shadow-sm">
                         No appointments scheduled for today.
                     </div>
-                 
+
                 }
                 else
                 {
                     <div class="card-body">
-                        <table class="table table-hover align-middle" id="patientTable">
-                            <thead class="table-dark">
+                        <table class="table table-hover table-striped mb-0 align-middle" id="patientTable">
+                            <thead class="table-primary">
                                 <tr>
                                     <th>#</th>
                                     <th>Patient</th>
@@ -153,9 +153,9 @@
                                             }
                                             else
                                             {
-                                               <button type="button" class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#checkInModal-@item.AppointmentId">
-                                                   <i class="bi bi-check2-circle me-1"></i> Check In
-                                               </button>
+                                                <button type="button" class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#checkInModal-@item.AppointmentId">
+                                                    <i class="bi bi-check2-circle me-1"></i> Check In
+                                                </button>
                                             }
 
                                         </td>
@@ -301,7 +301,7 @@
             }
         });
 
-        
+
     </script>
 }
 
