@@ -102,16 +102,10 @@ namespace Ward_Management_System.Controllers
 
         // GET: EmergencyContacts/AddEmergencyContactDetails
         [Authorize(Roles = "User")]
-        public async Task<IActionResult> AddEmergencyContactDetails()
+        public IActionResult AddEmergencyContactDetails()
         {
             string userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
             ViewBag.UserId = userId;
-
-            int existingCount = await _context.EmergencyContacts
-                                               .Where(ec => ec.UserId == userId)
-                                               .CountAsync();
-
-            ViewBag.ExistingCount = existingCount;
             return View();
         }
 

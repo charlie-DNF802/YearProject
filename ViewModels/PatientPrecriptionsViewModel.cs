@@ -10,6 +10,5 @@ namespace Ward_Management_System.ViewModels
         public List<PrescriptionDto> Prescriptions { get; set; }
         public int TotalItems { get; set; }
         public string Status { get; set; }
-        public DateTime PrescribedDate { get; set; }
     }
 }

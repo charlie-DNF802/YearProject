@@ -74,10 +74,9 @@
         doctorSelect.addEventListener("change", loadSlots);
         dateInput.addEventListener("change", loadSlots);
 
-                        async function loadSlots() {
+                async function loadSlots() {
             const doctorId = doctorSelect.value;
-            const date = dateInput.value;
-
+            const date     = dateInput.value;
             if (!doctorId || !date) {
                 timeSlotsArea.style.display = "none";
                 return;
@@ -92,43 +91,43 @@
                 "09:00","09:30","10:00","10:30","11:00",
                 "11:30","12:00","12:30","13:00","13:30",
                 "14:00","14:30","15:00","15:30","16:00",
-                "16:30","17:00","17:30","18:00","18:30",
-                "19:00","19:30","20:00","20:30","21:00"
+				"16:30","17:00","17:30","18:00"
             ];
 
             slotsContainer.innerHTML = "";
             timeSlotsArea.style.display = "block";
 
+            // Get current time
             const now = new Date();
             const selectedDate = new Date(date);
             const isToday = selectedDate.toDateString() === now.toDateString();
 
             slots.forEach(slot => {
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.classList.add("btn", "btn-sm");
+                btn.textContent = slot;
+
+                // Parse slot into Date for comparison
                 const [hours, minutes] = slot.split(":").map(Number);
                 const slotDate = new Date(selectedDate);
                 slotDate.setHours(hours, minutes, 0, 0);
 
-                // ❌ Skip booked or past slots
+                // Disable if already taken OR if today & slot is in the past
                 if (taken.includes(slot) || (isToday && slotDate <= now)) {
-                    return;
+                    btn.classList.add("btn-secondary");
+                    btn.disabled = true;
+                } else {
+                    btn.classList.add("btn-outline-primary");
+                    btn.addEventListener("click", () => {
+                        preferredTimeInput.value = slot;
+                        Array.from(slotsContainer.children).forEach(c => c.classList.remove("active"));
+                        btn.classList.add("active");
+                    });
                 }
-
-                // ✅ Only show available ones
-                const btn = document.createElement("button");
-                btn.type = "button";
-                btn.classList.add("btn", "btn-outline-primary", "btn-sm");
-                btn.textContent = slot;
-
-                btn.addEventListener("click", () => {
-                    preferredTimeInput.value = slot;
-                    Array.from(slotsContainer.children).forEach(c => c.classList.remove("active"));
-                    btn.classList.add("active");
-                });
-
                 slotsContainer.appendChild(btn);
             });
         }
-
 
     </script>
 }

@@ -158,11 +158,11 @@ namespace Ward_Management_System.Controllers
             var admissionsForChartList = admissionsForChartQuery.ToList();
 
             var days = Enumerable.Range(0, 30)
-                .Select(i => DateTime.Today.AddDays(-29 + i)) 
+                .Select(i => DateTime.Today.AddDays(-29 + i))
                 .ToList();
 
             var labels = days
-                .Select(d => d.ToString("dd MMM")) 
+                .Select(d => d.ToString("dd MMM"))
                 .ToArray();
 
             var counts = days
@@ -432,7 +432,7 @@ namespace Ward_Management_System.Controllers
                                  .FirstOrDefaultAsync(a => a.AppointmentId == appointment.AppointmentId);
             if (admission != null)
             {
-                
+
                 admission.Status = "Ready To Be Discharged";
             }
 
@@ -443,7 +443,7 @@ namespace Ward_Management_System.Controllers
                 AppointmentId = appointment.AppointmentId,
                 DischargeSummary = dischargeSummary,
                 DischargeDate = DateTime.Now,
-                DischargedById = doctorId 
+                DischargedById = doctorId
             };
 
             _context.DischargeInformation.Add(dischargeInfo);
@@ -880,7 +880,7 @@ namespace Ward_Management_System.Controllers
             foreach (var med in model.Medications)
             {
                 var prescribedMed = _context.PrescribedMedications
-                                            .FirstOrDefault(m => m.Id == med.PrescribedMedicationId); 
+                                            .FirstOrDefault(m => m.Id == med.PrescribedMedicationId);
 
                 if (prescribedMed != null)
                 {
@@ -960,7 +960,7 @@ namespace Ward_Management_System.Controllers
         }
 
         [Authorize(Roles = "Doctor")]
-        public async Task<IActionResult> AdministeredPrescriptions(int pg =1)
+        public async Task<IActionResult> AdministeredPrescriptions(int pg = 1)
         {
             var doctorId = _userManager.GetUserId(User);
 

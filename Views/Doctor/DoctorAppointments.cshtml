@@ -43,7 +43,7 @@
         }
         catch
         {
-            return 0; 
+            return 0;
         }
     }
 }
@@ -76,7 +76,7 @@
     <div class="row justify-content-center mb-4">
         <!-- Date Filter -->
         <div class="col-md-2">
-            <input type="date" class="form-control" id="dateFilter"/>
+            <input type="date" class="form-control" id="dateFilter" />
         </div>
 
         <!-- Gender Filter -->
@@ -235,7 +235,7 @@
         </div>
     </div>
 </div>
-@section Scripts{
+@section Scripts {
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
@@ -307,7 +307,7 @@
             applyFilters();
         });
 
-               
+
         document.getElementById("exportAppointmentsForm").addEventListener("submit", function (e) {
             e.preventDefault();
 
@@ -331,7 +331,7 @@
             document.getElementById("filteredDataInput").value = JSON.stringify(exportData);
             e.target.submit(); // now submit to controller
         });
-    
+
 
     </script>
 }

@@ -3,7 +3,7 @@
 
 @{
     ViewData["Title"] = "Schedule Follow-Up";
-    Layout = "~/Views/Shared/_UserLayout.cshtml"; 
+    Layout = "~/Views/Shared/_UserLayout.cshtml";
 }
 
 <div class="container-fluid patient-dashboard py-5">
@@ -50,7 +50,7 @@
                             <label asp-for="PreferredDate" class="form-label fw-semibold"></label>
                             <input asp-for="PreferredDate" type="date" class="form-control" id="preferredDate"
                                    value="@(Model.PreferredDate == default ? DateTime.Today.ToString("yyyy-MM-dd")
-                                   : Model.PreferredDate.ToString("yyyy-MM-dd"))" />
+                                                                      : Model.PreferredDate.ToString("yyyy-MM-dd"))" />
                             <span asp-validation-for="PreferredDate" class="text-danger small"></span>
                         </div>
 
@@ -84,7 +84,7 @@
                 </div>
             </form>
         </div>
-      
+
     </div>
 </div>
 
