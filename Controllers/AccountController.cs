@@ -285,7 +285,7 @@ namespace Ward_Management_System.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            // ✅ Check if new password is same as old
+            //  Check if new password is same as old
             var passwordHasher = new PasswordHasher<IdentityUser>();
             var verificationResult = passwordHasher.VerifyHashedPassword(user, user.PasswordHash, model.NewPassword);
 
