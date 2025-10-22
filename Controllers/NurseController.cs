@@ -172,7 +172,7 @@ namespace Ward_Management_System.Controllers
         [Authorize(Roles = "Nurse,Sister,Admin")]
         public async Task<IActionResult> TreatPatients()
         {
-           
+
             var patients = await _context.Appointments
                                           .Where(a => a.Status == "Admitted" || a.Status == "CheckedIn")
                                           .Select(a => new SelectListItem
@@ -191,7 +191,7 @@ namespace Ward_Management_System.Controllers
         {
             treatment.TreatmentDate = DateTime.Now;
             treatment.RecordedById = _userManager.GetUserId(User);
-           
+
             if (ModelState.IsValid)
             {
                 treatment.IsViewed = true;
@@ -214,7 +214,7 @@ namespace Ward_Management_System.Controllers
                                                      Value = a.AppointmentId.ToString(),
                                                      Text = a.FullName
                                                  }).ToListAsync();
-           
+
             return View(treatment);
         }
 
@@ -253,7 +253,12 @@ namespace Ward_Management_System.Controllers
                 .Where(a => a.Status == "Admitted" || a.Status == "CheckedIn")
                 .Select(a => new
                 {
-                    a.AppointmentId,a.FullName,a.IdNumber,a.Age,a.Gender,Treatment = a.Treatments
+                    a.AppointmentId,
+                    a.FullName,
+                    a.IdNumber,
+                    a.Age,
+                    a.Gender,
+                    Treatment = a.Treatments
                         .Where(t => usersWithDoctorRole.Contains(t.RecordedById)).OrderByDescending(t => t.TreatmentDate)
                         .Select(t => new
                         {
@@ -410,7 +415,6 @@ namespace Ward_Management_System.Controllers
             TempData["ToastType"] = "success";
             return RedirectToAction("PendingPrescriptions");
         }
-
 
 
     }

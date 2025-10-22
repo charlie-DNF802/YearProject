@@ -38,7 +38,7 @@ namespace Ward_Management_System.Controllers
             }
             var result = await signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: false);
             //Checking if login is successful
-            if (result.Succeeded)                            
+            if (result.Succeeded)
             {
                 var user = await userManager.FindByEmailAsync(model.Email);
                 var roles = await userManager.GetRolesAsync(user);
@@ -120,7 +120,7 @@ namespace Ward_Management_System.Controllers
                 await signInManager.SignInAsync(user, isPersistent: false);
                 return RedirectToAction("Login", "Account");
             }
-            foreach(var error in result.Errors)
+            foreach (var error in result.Errors)
             {
                 ModelState.AddModelError(string.Empty, error.Description);
             }
@@ -144,7 +144,7 @@ namespace Ward_Management_System.Controllers
             }
             var user = await userManager.FindByEmailAsync(model.Email);
 
-            if(user == null)
+            if (user == null)
             {
                 ModelState.AddModelError("", "User not found!");
                 return View(model);
@@ -227,7 +227,7 @@ namespace Ward_Management_System.Controllers
             }
 
             var user = await userManager.FindByNameAsync(model.Email);
-            if(user == null)
+            if (user == null)
             {
                 ModelState.AddModelError("", "User not found.");
                 return View(model);
@@ -240,7 +240,7 @@ namespace Ward_Management_System.Controllers
             }
             else
             {
-                foreach(var error in result.Errors)
+                foreach (var error in result.Errors)
                 {
                     ModelState.AddModelError("", error.Description);
                 }
@@ -262,7 +262,6 @@ namespace Ward_Management_System.Controllers
             return View(new UpdatePasswordViewModel());
         }
 
-        // POST: Update Password
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize]
@@ -276,7 +275,7 @@ namespace Ward_Management_System.Controllers
 
                 string detailedErrors = string.Join("<br/>", errors);
                 TempData["ToastMessage"] = $"Unable to update password. {detailedErrors}";
-                TempData["ToastType"] = "danger"; 
+                TempData["ToastType"] = "danger"; // Fixed from "Error"
                 return View(model);
             }
 
@@ -286,7 +285,7 @@ namespace Ward_Management_System.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
-            // Check if new password is same as old
+            //  Check if new password is same as old
             var passwordHasher = new PasswordHasher<IdentityUser>();
             var verificationResult = passwordHasher.VerifyHashedPassword(user, user.PasswordHash, model.NewPassword);
 
@@ -322,6 +321,7 @@ namespace Ward_Management_System.Controllers
         }
 
 
+
         [HttpPost]
         public async Task<IActionResult> SwitchRole(string role)
         {
@@ -342,7 +342,7 @@ namespace Ward_Management_System.Controllers
 
             return role switch
             {
-                "Admin" => RedirectToAction("Admin", "Admin"), 
+                "Admin" => RedirectToAction("Admin", "Admin"),
                 "Doctor" => RedirectToAction("Index", "Doctor"),
                 "WardAdmin" => RedirectToAction("Index", "WardAdmin"),
                 "Nurse" => RedirectToAction("Index", "Nurse"),

@@ -225,7 +225,7 @@ namespace Ward_Management_System.Controllers
 
                 if (room != null)
                 {
-                    room.IsAvailable = true; 
+                    room.IsAvailable = true;
                 }
             }
 
@@ -357,7 +357,7 @@ namespace Ward_Management_System.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateFolder(int appointmentId)
         {
-           
+
             var appointment = await _context.Appointments
                                             .FirstOrDefaultAsync(a => a.AppointmentId == appointmentId);
 
@@ -431,7 +431,7 @@ namespace Ward_Management_System.Controllers
                 .ToListAsync();
 
             const int pageSize = 5;
-            if(pg < 1) { pg = 1; }
+            if (pg < 1) { pg = 1; }
 
             int recsCount = readyPatients.Count();
             var pager = new Pager(recsCount, pg, pageSize);
@@ -479,7 +479,7 @@ namespace Ward_Management_System.Controllers
 
                 if (room != null)
                 {
-                    room.IsAvailable = true; 
+                    room.IsAvailable = true;
                 }
             }
 
@@ -493,7 +493,7 @@ namespace Ward_Management_System.Controllers
 
         // GET: Ward/MonitorMovement
         [Authorize(Roles = "WardAdmin,Admin")]
-        public IActionResult MonitorMovement(PatientMovementFilterViewModel filter,int pg =1)
+        public IActionResult MonitorMovement(PatientMovementFilterViewModel filter, int pg = 1)
         {
             var query = _context.PatientMovements
                 .Include(m => m.Admission)

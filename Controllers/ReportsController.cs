@@ -1047,7 +1047,7 @@ namespace Ward_Management_System.Controllers
                 .ToListAsync();
 
             var patientFullName = prescriptions.FirstOrDefault()?.Prescription.Appointment.FullName ?? patientIdNumber;
-           
+
             return GeneratePrescriptionPdf(
                 prescriptions,
                 $"Pending Prescriptions for {patientFullName}",

@@ -10,7 +10,7 @@
         public string Website { get; set; }
 
         // Navigation property: One Hospital can have many departments
-       
+        public virtual ICollection<Departments> Departments { get; set; }
         public string OperatingHours { get; set; }
     }
 }

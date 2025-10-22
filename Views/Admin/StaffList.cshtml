@@ -42,14 +42,14 @@
             </a>
         </div>
     </div>
-  
+
     <!-- Back Button -->
     <div class="mt-4">
         <a asp-controller="Admin" asp-action="Admin" class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left-circle"></i> Back
         </a>
     </div>
-    <br/>
+    <br />
 
     <!-- Filtering form -->
     <form method="get" asp-controller="Admin" asp-action="StaffList" class="d-flex align-items-center mb-4 flex-wrap gap-3 w-100">
@@ -100,95 +100,95 @@
         <div class="col-lg-8 mb-4">
             <div class="card shadow-sm">
 
-    @if (!Model.Any())
-    {
-        <div class="alert alert-info text-center">
-            There are no registered employees yet!.
-        </div>
-    }
-    else
-    {
-        <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle" id="staffTable">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>#</th>
-                                <th>Full Name</th>
-                                <th>Email</th>
-                                <th>Roles</th>
-                                <th>Age</th>
-                                <th>Address</th>
-                                <th>Phone Number</th>
-                                <th>ID Number</th>
-                                <th>Gender</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @{
-                                int count = ((pager.CurrentPage - 1) * pager.PageSize) + 1;
-                            }
-                            @foreach (var staff in Model)
-                            {
-                                <tr>
-                                    <td>@count</td>
-                                    <td>@staff.FullName</td>
-                                    <td>@staff.Email</td>
-                                    <td>
-                                        @foreach (var role in staff.Roles.Split(","))
-                                        {
-                                            var trimmedRole = role.Trim();
-                                            var badgeClass = trimmedRole switch
-                                            {
-                                                "Doctor" => "badge bg-primary",
-                                                "Nurse" => "badge bg-success",
-                                                "Sister" => "badge bg-warning text-dark",
-                                                "Ward Admin" => "badge bg-info text-dark",
-                                                _ => "badge bg-secondary"
-                                            };
-                                            <span class="@badgeClass me-1">@trimmedRole</span>
-                                        }
-                                    </td>
-                                    <td>@staff.Age</td>
-                                    <td>@staff.Address</td>
-                                    <td>@staff.PhoneNumber</td>
-                                    <td>@staff.IdNumber</td>
-                                    <td>@staff.Gender</td>
-                                    <td>
-                                        <button type="button"
-                                                class="btn btn-sm btn-outline-primary"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#editModal"
-                                                data-id="@staff.Id"
-                                                data-name="@staff.FullName"
-                                                data-age="@staff.Age"
-                                                data-address="@staff.Address"
-                                                data-phone="@staff.PhoneNumber"
-                                                data-idnumber="@staff.IdNumber"
-                                                data-gender="@staff.Gender"
-                                                data-email="@staff.Email"
-                                                data-role="@staff.Roles">
-                                            <i class="bi bi-pencil"></i>
-                                        </button>
+                @if (!Model.Any())
+                {
+                    <div class="alert alert-info text-center">
+                        There are no registered employees yet!.
+                    </div>
+                }
+                else
+                {
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover table-striped mb-0 align-middle" id="staffTable">
+                                <thead class="table-primary">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Full Name</th>
+                                        <th>Email</th>
+                                        <th>Roles</th>
+                                        <th>Age</th>
+                                        <th>Address</th>
+                                        <th>Phone Number</th>
+                                        <th>ID Number</th>
+                                        <th>Gender</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @{
+                                        int count = ((pager.CurrentPage - 1) * pager.PageSize) + 1;
+                                    }
+                                    @foreach (var staff in Model)
+                                    {
+                                        <tr>
+                                            <td>@count</td>
+                                            <td>@staff.FullName</td>
+                                            <td>@staff.Email</td>
+                                            <td>
+                                                @foreach (var role in staff.Roles.Split(","))
+                                                {
+                                                    var trimmedRole = role.Trim();
+                                                    var badgeClass = trimmedRole switch
+                                                    {
+                                                        "Doctor" => "badge bg-primary",
+                                                        "Nurse" => "badge bg-success",
+                                                        "Sister" => "badge bg-warning text-dark",
+                                                        "Ward Admin" => "badge bg-info text-dark",
+                                                        _ => "badge bg-secondary"
+                                                    };
+                                                    <span class="@badgeClass me-1">@trimmedRole</span>
+                                                }
+                                            </td>
+                                            <td>@staff.Age</td>
+                                            <td>@staff.Address</td>
+                                            <td>@staff.PhoneNumber</td>
+                                            <td>@staff.IdNumber</td>
+                                            <td>@staff.Gender</td>
+                                            <td>
+                                                <button type="button"
+                                                        class="btn btn-sm btn-outline-primary"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#editModal"
+                                                        data-id="@staff.Id"
+                                                        data-name="@staff.FullName"
+                                                        data-age="@staff.Age"
+                                                        data-address="@staff.Address"
+                                                        data-phone="@staff.PhoneNumber"
+                                                        data-idnumber="@staff.IdNumber"
+                                                        data-gender="@staff.Gender"
+                                                        data-email="@staff.Email"
+                                                        data-role="@staff.Roles">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
 
-                                        <button type="button"
-                                                class="btn btn-sm btn-outline-danger"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#deleteModal"
-                                                data-id="@staff.Id"
-                                                data-name="@staff.FullName"
-                                                data-email="@staff.Email"
-                                                data-role="@staff.Roles">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
+                                                <button type="button"
+                                                        class="btn btn-sm btn-outline-danger"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#deleteModal"
+                                                        data-id="@staff.Id"
+                                                        data-name="@staff.FullName"
+                                                        data-email="@staff.Email"
+                                                        data-role="@staff.Roles">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
 
-                                    </td>
-                                </tr>
-                                count++;
-                            }
-                        </tbody>
-                    </table>
+                                            </td>
+                                        </tr>
+                                        count++;
+                                    }
+                                </tbody>
+                            </table>
                             <!-- Paging -->
                             @if (ViewBag.Pager != null && ViewBag.Pager.TotalPages > 0)
                             {
@@ -220,117 +220,117 @@
                                 </ul>
                             }
 
-                </div>
-
-                    <!-- Delete Confirmation Modal -->
-                    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
-                        <div class="modal-dialog">
-                            <div class="modal-content border-0 shadow">
-                                <div class="modal-header bg-danger text-white">
-                                    <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
-                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                                </div>
-                                <div class="modal-body">
-                                    <p class="lead text-danger">Are you sure you want to delete this employee?</p>
-                                    <dl class="row">
-                                        <dt class="col-sm-4">Name:</dt>
-                                        <dd class="col-sm-8" id="modalName"></dd>
-
-                                        <dt class="col-sm-4">Email:</dt>
-                                        <dd class="col-sm-8" id="modalEmail"></dd>
-
-                                        <dt class="col-sm-4">Role:</dt>
-                                        <dd class="col-sm-8" id="modalRole"></dd>
-                                    </dl>
-                                    <form id="deleteForm" method="post" asp-action="SoftDelete">
-                                        <input type="hidden" name="id" id="modalUserId" />
-                                    </form>
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="submit" form="deleteForm" class="btn btn-danger">Confirm Delete</button>
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                </div>
-                            </div>
                         </div>
-                    </div>
-                    <!-- Edit Modal -->
-                    <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
-                        <div class="modal-dialog modal-lg">
-                            <div class="modal-content border-0 shadow">
-                                <div class="modal-header bg-warning text-dark ">
-                                    <h5 class="modal-title" id="editModalLabel">Edit Staff</h5>
-                                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                                </div>
-                                <form id="editForm" method="post" asp-action="EditStaff">
+
+                        <!-- Delete Confirmation Modal -->
+                        <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+                            <div class="modal-dialog">
+                                <div class="modal-content border-0 shadow">
+                                    <div class="modal-header bg-danger text-white">
+                                        <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
+                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
                                     <div class="modal-body">
-                                        <input type="hidden" name="Id" id="editUserId" />
+                                        <p class="lead text-danger">Are you sure you want to delete this employee?</p>
+                                        <dl class="row">
+                                            <dt class="col-sm-4">Name:</dt>
+                                            <dd class="col-sm-8" id="modalName"></dd>
 
-                                        <div class="row g-3">
-                                            <div class="col-md-6">
-                                                <label class="form-label">Full Name</label>
-                                                <input name="Name" id="editName" class="form-control" required />
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label class="form-label">Age</label>
-                                                <input name="Age" id="editAge" class="form-control" type="number" min="18" max="100" required />
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label class="form-label">Email</label>
-                                                <input name="Email" id="editEmail" class="form-control" required />
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label class="form-label">
-                                                    Default Password
-                                                    <i class="bi bi-info-circle ms-1 text-muted" data-bs-toggle="tooltip" title="Leave this blank to retain the existing password."></i>
-                                                </label>
-                                                <input name="DefaultPassword" id="editPassword" class="form-control" placeholder="Leave blank to keep current password" />
-                                            </div>
+                                            <dt class="col-sm-4">Email:</dt>
+                                            <dd class="col-sm-8" id="modalEmail"></dd>
 
-                                            <div class="col-md-6">
-                                                <label class="form-label">Phone Number</label>
-                                                <input name="PhoneNumber" id="editPhone" class="form-control" />
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label class="form-label">ID Number</label>
-                                                <input name="IdNumber" id="editIdNumber" class="form-control" />
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label class="form-label">Address</label>
-                                                <input name="Address" id="editAddress" class="form-control" />
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label class="form-label">Gender</label>
-                                                <select name="Gender" id="editGender" class="form-select">
-                                                    <option value="">-- Select Gender --</option>
-                                                    <option value="Male">Male</option>
-                                                    <option value="Female">Female</option>
-                                                    <option value="Other">Other</option>
-                                                </select>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label class="form-label">Role</label>
-                                                <select name="Role" id="editRole" class="form-select">
-                                                    <option value="">-- Select Role --</option>
-                                                    <option value="WardAdmin">Ward Admin</option>
-                                                    <option value="Nurse">Nurse</option>
-                                                    <option value="Sister">Sister</option>
-                                                    <option value="Doctor">Doctor</option>
-                                                </select>
-                                            </div>
-                                        </div>
+                                            <dt class="col-sm-4">Role:</dt>
+                                            <dd class="col-sm-8" id="modalRole"></dd>
+                                        </dl>
+                                        <form id="deleteForm" method="post" asp-action="SoftDelete">
+                                            <input type="hidden" name="id" id="modalUserId" />
+                                        </form>
                                     </div>
                                     <div class="modal-footer">
-                                        <button type="submit" class="btn btn-warning rounded-pill shadow-sm text-dark">Save Changes</button>
+                                        <button type="submit" form="deleteForm" class="btn btn-danger">Confirm Delete</button>
                                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                                     </div>
-                                </form>
+                                </div>
                             </div>
                         </div>
+                        <!-- Edit Modal -->
+                        <div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content border-0 shadow">
+                                    <div class="modal-header bg-warning text-dark ">
+                                        <h5 class="modal-title" id="editModalLabel">Edit Staff</h5>
+                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <form id="editForm" method="post" asp-action="EditStaff">
+                                        <div class="modal-body">
+                                            <input type="hidden" name="Id" id="editUserId" />
+
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Full Name</label>
+                                                    <input name="Name" id="editName" class="form-control" required />
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Age</label>
+                                                    <input name="Age" id="editAge" class="form-control" type="number" min="18" max="100" required />
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Email</label>
+                                                    <input name="Email" id="editEmail" class="form-control" required />
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">
+                                                        Default Password
+                                                        <i class="bi bi-info-circle ms-1 text-muted" data-bs-toggle="tooltip" title="Leave this blank to retain the existing password."></i>
+                                                    </label>
+                                                    <input name="DefaultPassword" id="editPassword" class="form-control" placeholder="Leave blank to keep current password" />
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Phone Number</label>
+                                                    <input name="PhoneNumber" id="editPhone" class="form-control" />
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">ID Number</label>
+                                                    <input name="IdNumber" id="editIdNumber" class="form-control" />
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Address</label>
+                                                    <input name="Address" id="editAddress" class="form-control" />
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Gender</label>
+                                                    <select name="Gender" id="editGender" class="form-select">
+                                                        <option value="">-- Select Gender --</option>
+                                                        <option value="Male">Male</option>
+                                                        <option value="Female">Female</option>
+                                                        <option value="Other">Other</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Role</label>
+                                                    <select name="Role" id="editRole" class="form-select">
+                                                        <option value="">-- Select Role --</option>
+                                                        <option value="WardAdmin">Ward Admin</option>
+                                                        <option value="Nurse">Nurse</option>
+                                                        <option value="Sister">Sister</option>
+                                                        <option value="Doctor">Doctor</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="submit" class="btn btn-warning rounded-pill shadow-sm text-dark">Save Changes</button>
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+
                     </div>
 
-
-            </div>
-       
                 }
 
             </div>
@@ -398,7 +398,7 @@
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-    
+
         //Delete
         const deleteModal = document.getElementById('deleteModal');
 
