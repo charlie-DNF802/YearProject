@@ -271,13 +271,12 @@ namespace Ward_Management_System.Controllers
             if (!ModelState.IsValid)
             {
                 var errors = ModelState.Values.SelectMany(v => v.Errors)
-                                      .Select(e => e.ErrorMessage)
-                                      .ToList();
+                                              .Select(e => e.ErrorMessage)
+                                              .ToList();
 
                 string detailedErrors = string.Join("<br/>", errors);
-
                 TempData["ToastMessage"] = $"Unable to update password. {detailedErrors}";
-                TempData["ToastType"] = "Error";
+                TempData["ToastType"] = "danger"; 
                 return View(model);
             }
 
@@ -287,22 +286,33 @@ namespace Ward_Management_System.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
+            // Check if new password is same as old
+            var passwordHasher = new PasswordHasher<IdentityUser>();
+            var verificationResult = passwordHasher.VerifyHashedPassword(user, user.PasswordHash, model.NewPassword);
+
+            if (verificationResult == PasswordVerificationResult.Success)
+            {
+                TempData["ToastMessage"] = "New password must be different from the current password.";
+                TempData["ToastType"] = "danger";
+                return View(model);
+            }
+
             var result = await userManager.ChangePasswordAsync(user, model.OldPassword, model.NewPassword);
 
             if (result.Succeeded)
             {
                 TempData["ToastMessage"] = "Your password has been changed successfully.";
-                TempData["ToastType"] = "Success";
-                return RedirectToAction("UpdatePassword", "Account"); // or Dashboard
+                TempData["ToastType"] = "success";
+                return RedirectToAction("UpdatePassword");
             }
 
+            // Handle Identity errors
             var errorMessages = result.Errors.Select(e => e.Description).ToList();
             string combinedErrors = string.Join("<br/>", errorMessages);
 
             TempData["ToastMessage"] = $"Failed to change password. {combinedErrors}";
             TempData["ToastType"] = "danger";
 
-            // Optional: also keep ModelState errors visible in case toast disappears quickly
             foreach (var error in result.Errors)
             {
                 ModelState.AddModelError("", error.Description);
